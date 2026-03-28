@@ -1,10 +1,20 @@
-Here is a more detailed and extensive `README.md` for your project, with enhanced formatting and additional sections based on the new files you provided.
-
------
-
 # Time Tracker
 
 A comprehensive, cross-platform time tracking application built with Flutter. Manage clients, projects, and tasks, track your time, handle expenses, and generate professional invoices with ease.
+
+-----
+
+## Table of Contents
+
+- [About The Project](#-about-the-project)
+- [Built With](#️-built-with)
+- [Getting Started](#-getting-started)
+- [Screens](#-screens)
+- [Database Schema](#️-database-schema)
+- [Dependencies](#-dependencies)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Contact](#-contact)
 
 -----
 
@@ -21,7 +31,7 @@ This project is a robust time tracking and invoicing solution designed for freel
   * **Invoice Generation:** Generate professional PDF invoices from your time entries and expenses.
   * **Reporting & Analytics:** Visualize your tracked time and revenue with detailed reports and charts.
   * **Company Settings:** Customize your company details, logo, and invoice letterhead for a professional touch.
-  * **Cross-Platform:** A single codebase that runs on Android, iOS, Windows, macOS, and Linux.
+  * **Cross-Platform:** A single codebase that runs on Android, iOS, Web, Windows, macOS, and Linux.
 
 -----
 
@@ -33,7 +43,7 @@ This project is built with a modern and robust tech stack:
   * [**Drift (formerly Moor)**](https://drift.simonbinder.eu/) - A reactive persistence library for Flutter and Dart, built on top of SQLite.
   * [**Provider**](https://pub.dev/packages/provider) - A wrapper around `InheritedWidget` to make it easier to use and more reusable.
   * [**PDF**](https://pub.dev/packages/pdf) & [**Printing**](https://pub.dev/packages/printing) - For creating and displaying PDF invoices.
-  * [**file\_picker**](https://pub.dev/packages/file_picker) - To allow users to pick a company logo.
+  * [**file\_picker**](https://pub.dev/packages/file_picker) & [**image\_picker**](https://pub.dev/packages/image_picker) - To allow users to pick files and images.
   * [**fl\_chart**](https://pub.dev/packages/fl_chart) - A library to draw fantastic charts in Flutter.
 
 -----
@@ -119,6 +129,7 @@ This project relies on a set of powerful packages from the Dart and Flutter ecos
   * **`fl_chart`**: For creating beautiful charts.
   * **`intl`**: Provides internationalization and localization facilities, including date and number formatting.
   * **`file_picker`**: A package that allows you to use the native file explorer to pick files.
+  * **`image_picker`**: A plugin for picking images from the device gallery or camera.
   * **`uuid`**: For generating unique IDs.
   * **`cupertino_icons`**: Provides the Cupertino (iOS-style) icons.
 
@@ -155,6 +166,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Nicolas Lobos - [nicolasrlobos@gmail.com](mailto:nicolasrlobos@gmail.com)
 
-Buy me a Coffee (if you would like to!)☕: [buymeacoffee.com/nicolasrlobos](buymeacoffee.com/nicolasrlobos)
+Buy me a Coffee (if you would like to!) ☕: [buymeacoffee.com/nicolasrlobos](https://buymeacoffee.com/nicolasrlobos)
 
-Project Link: [https://github.com/NicolasLobosDEV/time\_tracker](https://github.com/NicolasLobosDEV/time_tracker)
+Project Link: [https://github.com/NicolasLobosDEV/time_tracker](https://github.com/NicolasLobosDEV/time_tracker)
