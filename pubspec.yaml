@@ -64,6 +64,8 @@ dev_dependencies:
   # Database code generation
   drift_dev: ^2.18.0
   build_runner: ^2.4.9
+  # Required for in-memory database tests (NativeDatabase.memory())
+  sqlite3: ^2.4.0
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
