@@ -90,15 +90,44 @@ class CompanySettings extends Table {
   BoolColumn get showLetterhead => boolean().withDefault(const Constant(true))();
 }
 
+class AppNotifications extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get title => text()();
+  TextColumn get body => text()();
+  TextColumn get type => text()(); // timer_stopped, deadline_approaching, time_limit_warning, weekly_summary, invoice_overdue, task_overdue, milestone_reached
+  TextColumn get severity => text().withDefault(const Constant('info'))(); // info, warning, success, error
+  DateTimeColumn get createdAt => dateTime()();
+  BoolColumn get isRead => boolean().withDefault(const Constant(false))();
+  BoolColumn get isDismissed => boolean().withDefault(const Constant(false))();
+  IntColumn get relatedEntityId => integer().nullable()(); // ID of related time entry, project, invoice, etc.
+  TextColumn get relatedEntityType => text().nullable()(); // time_entry, project, invoice, todo, expense
+  TextColumn get actionRoute => text().nullable()(); // Optional deep-link route to navigate to
+  TextColumn get metadata => text().nullable()(); // JSON string for extra data
+}
 
-@DriftDatabase(tables: [Clients, Projects, TimeEntries, Expenses, Invoices, Todos, CompanySettings])
+class NotificationPreferences extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  BoolColumn get timerStopNotifications => boolean().withDefault(const Constant(true))();
+  BoolColumn get deadlineReminders => boolean().withDefault(const Constant(true))();
+  BoolColumn get timeLimitWarnings => boolean().withDefault(const Constant(true))();
+  BoolColumn get weeklySummary => boolean().withDefault(const Constant(true))();
+  BoolColumn get invoiceOverdueAlerts => boolean().withDefault(const Constant(true))();
+  BoolColumn get taskOverdueAlerts => boolean().withDefault(const Constant(true))();
+  BoolColumn get milestoneNotifications => boolean().withDefault(const Constant(true))();
+  IntColumn get deadlineReminderMinutes => integer().withDefault(const Constant(60))(); // minutes before deadline
+  IntColumn get timeLimitWarningPercent => integer().withDefault(const Constant(80))(); // percentage of time limit
+  BoolColumn get soundEnabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get vibrationEnabled => boolean().withDefault(const Constant(true))();
+}
+
+
+@DriftDatabase(tables: [Clients, Projects, TimeEntries, Expenses, Invoices, Todos, CompanySettings, AppNotifications, NotificationPreferences])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3; // FIX: Incremented schema version to 3
+  int get schemaVersion => 4;
 
-  // FIX: Added migration logic
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
@@ -107,12 +136,12 @@ class AppDatabase extends _$AppDatabase {
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
-          // Migration from version 1 to 2
           await m.addColumn(timeEntries, timeEntries.isLogged);
         }
-        // Drift will handle recreating tables with the new cascade rules
-        // automatically because of the schema version bump. For complex migrations,
-        // you might need more specific logic here.
+        if (from < 4) {
+          await m.createTable(appNotifications);
+          await m.createTable(notificationPreferences);
+        }
       },
     );
   }

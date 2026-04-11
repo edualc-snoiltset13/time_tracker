@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:time_tracker/database/database.dart';
+import 'package:time_tracker/services/notification_service.dart';
 import 'package:time_tracker/screens/main_screen.dart'; // Import the main screen with the navigation bar
 
 void main() {
@@ -9,7 +10,15 @@ void main() {
     Provider<AppDatabase>(
       create: (context) => AppDatabase(),
       dispose: (context, db) => db.close(),
-      child: const MyApp(),
+      child: Builder(
+        builder: (context) {
+          final db = Provider.of<AppDatabase>(context, listen: false);
+          return ChangeNotifierProvider<NotificationService>(
+            create: (_) => NotificationService(db),
+            child: const MyApp(),
+          );
+        },
+      ),
     ),
   );
 }

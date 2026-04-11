@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:time_tracker/database/database.dart';
+import 'package:time_tracker/services/notification_service.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'add_entry_dialog.dart';
 import 'edit_entry_screen.dart';
@@ -208,12 +209,28 @@ class _ActiveTimerCardState extends State<ActiveTimerCard> {
     super.dispose();
   }
 
-  void _stopTimer() {
+  Future<void> _stopTimer() async {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    (db.update(db.timeEntries)..where((t) => t.id.equals(widget.activeEntry.id)))
+    final notificationService = Provider.of<NotificationService>(context, listen: false);
+    final now = DateTime.now();
+    final elapsed = now.difference(widget.activeEntry.startTime);
+
+    await (db.update(db.timeEntries)..where((t) => t.id.equals(widget.activeEntry.id)))
       .write(TimeEntriesCompanion(
-        endTime: Value(DateTime.now()),
+        endTime: Value(now),
       ));
+
+    // Look up the project name for the notification
+    final project = await (db.select(db.projects)
+      ..where((p) => p.id.equals(widget.activeEntry.projectId)))
+      .getSingleOrNull();
+
+    await notificationService.notifyTimerStopped(
+      timeEntryId: widget.activeEntry.id,
+      description: widget.activeEntry.description,
+      elapsed: elapsed,
+      projectName: project?.name ?? 'Unknown Project',
+    );
   }
 
   String _formatDuration(Duration duration) {

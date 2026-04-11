@@ -10,6 +10,7 @@ import 'package:time_tracker/screens/projects/projects_screen.dart';
 import 'package:time_tracker/screens/reports/reports_screen.dart';
 import 'package:time_tracker/screens/settings/settings_screen.dart';
 import 'package:time_tracker/screens/time_tracker/time_tracker_screen.dart';
+import 'package:time_tracker/widgets/notification_badge.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -55,6 +56,9 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
+        actions: const [
+          NotificationBadge(),
+        ],
       ),
       body: Center(
         child: _screens.elementAt(_selectedIndex),
