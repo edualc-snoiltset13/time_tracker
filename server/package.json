@@ -1,0 +1,16 @@
+{
+  "name": "time-tracker-api",
+  "version": "1.0.0",
+  "description": "REST API backend for the Time Tracker application",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "uuid": "^11.1.0"
+  }
+}
