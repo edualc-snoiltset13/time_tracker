@@ -30,10 +30,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-    
+
   # Database (Local Storage)
-  drift: ^2.18.0
-  sqlite3_flutter_libs: ^0.5.21
+  # NOTE: drift 2.32+ requires a sqlite3 v3.x migration (remove sqlite3_flutter_libs,
+  # update web WASM files). Capped at <2.32.0 until that migration is done separately.
+  drift: ">=2.31.0 <2.32.0"
+  # NOTE: sqlite3_flutter_libs is EOL for sqlite3 3.x. It remains functional for
+  # drift <2.32.0. Migrate to sqlite3 3.x (which bundles native libs via build hooks)
+  # when upgrading drift to 2.32+.
+  sqlite3_flutter_libs: ^0.5.42
   path_provider: ^2.1.3
   path: ^1.9.0
 
@@ -41,29 +46,35 @@ dependencies:
   provider: ^6.1.2
 
   # PDF Generation & Handling
-  pdf: ^3.10.8
-  printing: ^5.12.0
-  open_file: ^3.3.2
+  pdf: ^3.12.0
+  printing: ^5.14.3
+  open_file: ^3.5.11
 
   # UI & Utilities
-  fl_chart: ^1.0.0       # For reports
+  fl_chart: ^1.2.0       # For reports
   intl: ^0.20.2           # For date and currency formatting
+  # NOTE: file_picker 11.x is a major version bump — the API changed from
+  # instance-based to static methods (FilePicker.pickFiles() etc.).
+  # Requires code changes throughout the app before upgrading.
   file_picker: ^10.3.2     # To pick company logo
-  image_picker: ^1.1.2
-  uuid: ^4.4.0            # For generating unique IDs
+  image_picker: ^1.2.1
+  uuid: ^4.5.3            # For generating unique IDs
 
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
+  # NOTE: cupertino_icons 1.0.9 requires Flutter 3.35 / Dart 3.9+.
+  # Keeping at ^1.0.8 until the sdk constraint is bumped to ^3.9.0.
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   # Database code generation
-  drift_dev: ^2.18.0
-  build_runner: ^2.4.9
+  # Capped to match drift constraint — drift_dev must stay in sync with drift.
+  drift_dev: ">=2.31.0 <2.32.0"
+  build_runner: ^2.13.1
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -97,7 +108,6 @@ flutter:
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
   # fonts:
