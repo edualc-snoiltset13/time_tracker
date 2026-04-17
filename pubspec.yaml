@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-    
+
   # Database (Local Storage)
   # NOTE: drift 2.32+ requires a sqlite3 v3.x migration (remove sqlite3_flutter_libs,
   # update web WASM files). Capped at <2.32.0 until that migration is done separately.
@@ -47,8 +47,8 @@ dependencies:
 
   # PDF Generation & Handling
   pdf: ^3.12.0
-  printing: ^5.14.0
-  open_file: ^3.5.0
+  printing: ^5.14.3
+  open_file: ^3.5.11
 
   # UI & Utilities
   fl_chart: ^1.2.0       # For reports
@@ -57,8 +57,8 @@ dependencies:
   # instance-based to static methods (FilePicker.pickFiles() etc.).
   # Requires code changes throughout the app before upgrading.
   file_picker: ^10.3.2     # To pick company logo
-  image_picker: ^1.2.0
-  uuid: ^4.5.0            # For generating unique IDs
+  image_picker: ^1.2.1
+  uuid: ^4.5.3            # For generating unique IDs
 
 
 
@@ -74,7 +74,7 @@ dev_dependencies:
   # Database code generation
   # Capped to match drift constraint — drift_dev must stay in sync with drift.
   drift_dev: ">=2.31.0 <2.32.0"
-  build_runner: ^2.13.0
+  build_runner: ^2.13.1
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -108,7 +108,6 @@ flutter:
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
   # fonts:
