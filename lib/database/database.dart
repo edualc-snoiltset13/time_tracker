@@ -95,6 +95,8 @@ class CompanySettings extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  AppDatabase.forTesting(QueryExecutor executor) : super(executor);
+
   @override
   int get schemaVersion => 3; // FIX: Incremented schema version to 3
 
