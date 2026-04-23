@@ -32,7 +32,7 @@ dependencies:
     sdk: flutter
     
   # Database (Local Storage)
-  drift: ^2.31.0
+  drift: ^2.32.1
   sqlite3_flutter_libs: ^0.5.42
   path_provider: ^2.1.5
   path: ^1.9.1
@@ -62,8 +62,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   # Database code generation
-  drift_dev: ^2.31.0
-  build_runner: ^2.13.1
+  drift_dev: ^2.32.1
+  build_runner: ^2.14.0
 
 
   # The "flutter_lints" package below contains a set of recommended lints to

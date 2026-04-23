@@ -101,10 +101,10 @@ packages:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: "521daf8d189deb79ba474e43a696b41c49fb3987818dbacf3308f1e03673a75e"
+      sha256: "4425a87d87d0d1303540f867994303f5b141ad2f6ecac7ac2cf8851f41c0cef1"
       url: "https://pub.dev"
     source: hosted
-    version: "2.13.1"
+    version: "2.14.0"
   build_runner_core:
     dependency: transitive
     description:
@@ -237,18 +237,18 @@ packages:
     dependency: "direct main"
     description:
       name: drift
-      sha256: "6aaea757f53bb035e8a3baedf3d1d53a79d6549a6c13d84f7546509da9372c7c"
+      sha256: "055c249d1f91be5a47fe447f88afc24c4ca6f4cd6c5ed66767b4797d48acc2e5"
       url: "https://pub.dev"
     source: hosted
-    version: "2.28.1"
+    version: "2.32.1"
   drift_dev:
     dependency: "direct dev"
     description:
       name: drift_dev
-      sha256: "2fc05ad458a7c562755bf0cae11178dfc58387a416829b78d4da5155a61465fd"
+      sha256: "88a9de3af8571518148a6d8a513b57779fd1e60a026d3ab8a481a878fba01d91"
       url: "https://pub.dev"
     source: hosted
-    version: "2.28.1"
+    version: "2.32.1"
   equatable:
     dependency: transitive
     description:
