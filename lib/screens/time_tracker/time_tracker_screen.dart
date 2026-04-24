@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:time_tracker/database/database.dart';
+import 'package:time_tracker/services/idle_service.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'add_entry_dialog.dart';
 import 'edit_entry_screen.dart';
@@ -188,6 +189,8 @@ class ActiveTimerCard extends StatefulWidget {
 class _ActiveTimerCardState extends State<ActiveTimerCard> {
   late Timer _timer;
   late Duration _elapsed;
+  DateTime? _idleStartedAt;
+  bool _idleDialogOpen = false;
 
   @override
   void initState() {
@@ -195,9 +198,7 @@ class _ActiveTimerCardState extends State<ActiveTimerCard> {
     _elapsed = DateTime.now().difference(widget.activeEntry.startTime);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
-        setState(() {
-          _elapsed = DateTime.now().difference(widget.activeEntry.startTime);
-        });
+        _tick();
       }
     });
   }
@@ -206,6 +207,72 @@ class _ActiveTimerCardState extends State<ActiveTimerCard> {
   void dispose() {
     _timer.cancel();
     super.dispose();
+  }
+
+  void _tick() {
+    final idle = Provider.of<IdleService>(context, listen: false);
+    final now = DateTime.now();
+    final wasIdle = _idleStartedAt != null;
+    final nowIdle = idle.isIdle;
+
+    setState(() {
+      _elapsed = now.difference(widget.activeEntry.startTime);
+      if (nowIdle && !wasIdle) {
+        // Idle started at the moment activity stopped being recorded.
+        _idleStartedAt = idle.lastActivity;
+      } else if (!nowIdle && wasIdle) {
+        final idleDuration = now.difference(_idleStartedAt!);
+        _idleStartedAt = null;
+        if (!_idleDialogOpen) {
+          _promptIdleAction(idleDuration);
+        }
+      }
+    });
+  }
+
+  Future<void> _promptIdleAction(Duration idleDuration) async {
+    _idleDialogOpen = true;
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final action = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Welcome back'),
+        content: Text(
+          'You were idle for ${_formatDuration(idleDuration)}.\n'
+          'How would you like to handle the idle time?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'keep'),
+            child: const Text('Keep'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'discard'),
+            child: const Text('Discard'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'stop'),
+            child: const Text('Stop timer'),
+          ),
+        ],
+      ),
+    );
+    _idleDialogOpen = false;
+
+    if (!mounted) return;
+
+    if (action == 'discard') {
+      final newStart = widget.activeEntry.startTime.add(idleDuration);
+      await (db.update(db.timeEntries)
+            ..where((t) => t.id.equals(widget.activeEntry.id)))
+          .write(TimeEntriesCompanion(startTime: Value(newStart)));
+    } else if (action == 'stop') {
+      final endTime = DateTime.now().subtract(idleDuration);
+      await (db.update(db.timeEntries)
+            ..where((t) => t.id.equals(widget.activeEntry.id)))
+          .write(TimeEntriesCompanion(endTime: Value(endTime)));
+    }
   }
 
   void _stopTimer() {
@@ -225,11 +292,42 @@ class _ActiveTimerCardState extends State<ActiveTimerCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isIdle = _idleStartedAt != null;
     return Card(
-      color: Theme.of(context).primaryColor.withAlpha(51),
+      color: isIdle
+          ? Colors.amber.withAlpha(51)
+          : Theme.of(context).primaryColor.withAlpha(51),
       margin: const EdgeInsets.all(8.0),
       child: ListTile(
-        title: Text(widget.activeEntry.description, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                widget.activeEntry.description,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (isIdle) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade700,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'IDLE',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
         subtitle: Text(widget.activeEntry.category),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
