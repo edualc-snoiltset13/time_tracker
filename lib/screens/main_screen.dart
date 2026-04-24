@@ -6,6 +6,7 @@ import 'package:time_tracker/screens/clients/clients_screen.dart';
 import 'package:time_tracker/screens/expenses/expenses_screen.dart';
 import 'package:time_tracker/screens/home_screen.dart';
 import 'package:time_tracker/screens/invoices/invoices_screen.dart';
+import 'package:time_tracker/screens/items/items_screen.dart';
 import 'package:time_tracker/screens/projects/projects_screen.dart';
 import 'package:time_tracker/screens/reports/reports_screen.dart';
 import 'package:time_tracker/screens/settings/settings_screen.dart';
@@ -28,6 +29,7 @@ class _MainScreenState extends State<MainScreen> {
     const ProjectsScreen(),
     const ClientsScreen(),
     const ExpensesScreen(),
+    const ItemsScreen(),
     const InvoicesScreen(),
     const ReportsScreen(),
     const SettingsScreen(),
@@ -39,6 +41,7 @@ class _MainScreenState extends State<MainScreen> {
     'Projects',
     'Clients',
     'Expenses',
+    'Items',
     'Invoices',
     'Reports',
     'Settings',
@@ -80,6 +83,10 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.receipt),
             label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_scanner),
+            label: 'Items',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.request_quote),

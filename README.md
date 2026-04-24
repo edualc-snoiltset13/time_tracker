@@ -21,6 +21,7 @@ This project is a robust time tracking and invoicing solution designed for freel
   * **Invoice Generation:** Generate professional PDF invoices from your time entries and expenses.
   * **Reporting & Analytics:** Visualize your tracked time and revenue with detailed reports and charts.
   * **Company Settings:** Customize your company details, logo, and invoice letterhead for a professional touch.
+  * **Barcode Scanner & Item Library:** Scan product barcodes with the device camera, automatically identify items via a local library and the Open Food Facts API, and pre-fill expenses from a scanned item.
   * **Cross-Platform:** A single codebase that runs on Android, iOS, Windows, macOS, and Linux.
 
 -----
@@ -83,6 +84,7 @@ The application is organized into several main screens, each handling a specific
   * **Expenses Screen (`expenses_screen.dart`):** A list of all recorded expenses, with options to add, edit, or delete.
   * **Invoices Screen (`invoices_screen.dart`):** A list of all generated invoices, with options to create new ones.
   * **Reports Screen (`reports_screen.dart`):** Visual reports and charts to analyze your time and revenue.
+  * **Items Screen (`items/items_screen.dart`):** Barcode-scanner library. Scan a barcode to identify an item (resolved locally or via the Open Food Facts API), register new items, browse the library, and review scan history.
   * **Settings Screen (`settings_screen.dart`):** A dedicated screen to manage your company's information and app settings.
 
 -----

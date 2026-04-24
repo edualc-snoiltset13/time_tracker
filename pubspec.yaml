@@ -52,6 +52,10 @@ dependencies:
   image_picker: ^1.1.2
   uuid: ^4.4.0            # For generating unique IDs
 
+  # Barcode scanning & item lookup
+  mobile_scanner: ^5.2.3  # Camera-based barcode scanner
+  http: ^1.2.2            # For external barcode lookup (Open Food Facts)
+
 
 
   # The following adds the Cupertino Icons font to your application.

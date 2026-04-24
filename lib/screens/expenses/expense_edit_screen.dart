@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:time_tracker/database/database.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:time_tracker/models/item.dart' as barcode;
+import 'package:time_tracker/screens/items/barcode_scanner_screen.dart';
+import 'package:time_tracker/screens/items/scan_result_screen.dart';
 
 class ExpenseEditScreen extends StatefulWidget {
   final Expense? expense;
@@ -113,12 +116,55 @@ class _ExpenseEditScreenState extends State<ExpenseEditScreen> {
     }
   }
 
+  Future<void> _scanItemForExpense() async {
+    final scan = await Navigator.of(context).push<BarcodeScanResult>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (scan == null || !mounted) return;
+
+    final item = await Navigator.of(context).push<barcode.Item>(
+      MaterialPageRoute(
+        builder: (_) => ScanResultScreen(
+          barcode: scan.barcode,
+          format: scan.format,
+          selectionMode: true,
+        ),
+      ),
+    );
+    if (item == null || !mounted) return;
+
+    setState(() {
+      _descriptionController.text = item.brand == null || item.brand!.isEmpty
+          ? item.name
+          : '${item.brand} - ${item.name}';
+      if (item.price != null) {
+        _amountController.text = item.price!.toStringAsFixed(2);
+      }
+      if (item.category != null && _categories.contains(item.category)) {
+        _selectedCategory = item.category;
+      } else {
+        _selectedCategory ??= 'Other';
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Prefilled from "${item.name}"')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Expense' : 'Add Expense'),
-        actions: [IconButton(icon: const Icon(Icons.save), onPressed: _save)],
+        actions: [
+          IconButton(
+            tooltip: 'Scan item barcode',
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: _scanItemForExpense,
+          ),
+          IconButton(icon: const Icon(Icons.save), onPressed: _save),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
