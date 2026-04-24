@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:time_tracker/database/database.dart';
 import 'package:time_tracker/screens/main_screen.dart'; // Import the main screen with the navigation bar
+import 'package:time_tracker/utils/idle_detector.dart';
 
 void main() {
   runApp(
@@ -38,8 +39,8 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.deepPurple,
         ),
       ),
-      // Use MainScreen as the home widget
-      home: const MainScreen(),
+      // Use MainScreen as the home widget, wrapped with idle detection.
+      home: const IdleDetector(child: MainScreen()),
     );
   }
 }
