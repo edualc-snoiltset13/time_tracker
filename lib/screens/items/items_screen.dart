@@ -1,14 +1,20 @@
 // lib/screens/items/items_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import 'package:time_tracker/models/item.dart';
 import 'package:time_tracker/services/item_repository.dart';
 import 'package:time_tracker/screens/items/barcode_scanner_screen.dart';
 import 'package:time_tracker/screens/items/item_edit_screen.dart';
 import 'package:time_tracker/screens/items/scan_result_screen.dart';
+import 'package:time_tracker/screens/items/widgets/item_list_tile.dart';
 
 /// Browse, search, and scan items in the barcode library.
+///
+/// Shown inside [MainScreen], which owns the AppBar, so this widget does
+/// not add its own. Primary action (Scan) lives on the FAB; secondary
+/// action (Add manually) is an icon button inline with the TabBar.
 class ItemsScreen extends StatefulWidget {
   const ItemsScreen({super.key});
 
@@ -19,13 +25,10 @@ class ItemsScreen extends StatefulWidget {
 class _ItemsScreenState extends State<ItemsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs = TabController(length: 2, vsync: this);
-  final _searchCtrl = TextEditingController();
-  String _query = '';
 
   @override
   void dispose() {
     _tabs.dispose();
-    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -44,6 +47,12 @@ class _ItemsScreenState extends State<ItemsScreen>
     );
   }
 
+  void _openManualAdd() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ItemEditScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,48 +60,66 @@ class _ItemsScreenState extends State<ItemsScreen>
         children: [
           Material(
             color: Theme.of(context).scaffoldBackgroundColor,
-            child: TabBar(
-              controller: _tabs,
-              tabs: const [
-                Tab(icon: Icon(Icons.inventory_2), text: 'Library'),
-                Tab(icon: Icon(Icons.history), text: 'Scan History'),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TabBar(
+                    controller: _tabs,
+                    tabs: const [
+                      Tab(icon: Icon(Icons.inventory_2), text: 'Library'),
+                      Tab(icon: Icon(Icons.history), text: 'Scan History'),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Add item manually',
+                  icon: const Icon(Icons.add),
+                  onPressed: _openManualAdd,
+                ),
               ],
             ),
           ),
           Expanded(
             child: TabBarView(
               controller: _tabs,
-              children: [
-                _buildLibraryTab(),
-                _buildHistoryTab(),
+              children: const [
+                _LibraryTab(),
+                _HistoryTab(),
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'scan_barcode_fab',
-            onPressed: _startScan,
-            icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Scan'),
-          ),
-          const SizedBox(width: 12),
-          FloatingActionButton(
-            heroTag: 'add_item_fab',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ItemEditScreen()),
-            ),
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _startScan,
+        icon: const Icon(Icons.qr_code_scanner),
+        label: const Text('Scan'),
       ),
     );
   }
+}
 
-  Widget _buildLibraryTab() {
+class _LibraryTab extends StatefulWidget {
+  const _LibraryTab();
+
+  @override
+  State<_LibraryTab> createState() => _LibraryTabState();
+}
+
+class _LibraryTabState extends State<_LibraryTab> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final repo = Provider.of<ItemRepository>(context, listen: false);
+
     return Column(
       children: [
         Padding(
@@ -120,7 +147,7 @@ class _ItemsScreenState extends State<ItemsScreen>
         ),
         Expanded(
           child: StreamBuilder<List<Item>>(
-            stream: ItemRepository.instance.watchItems(),
+            stream: repo.watchItems(),
             builder: (context, snapshot) {
               final items = snapshot.data ?? [];
               if (items.isEmpty) {
@@ -155,7 +182,11 @@ class _ItemsScreenState extends State<ItemsScreen>
 
               return ListView.builder(
                 itemCount: filtered.length,
-                itemBuilder: (context, idx) => _itemTile(filtered[idx]),
+                itemBuilder: (context, idx) => _dismissibleTile(
+                  context,
+                  filtered[idx],
+                  repo,
+                ),
               );
             },
           ),
@@ -164,13 +195,11 @@ class _ItemsScreenState extends State<ItemsScreen>
     );
   }
 
-  Widget _itemTile(Item item) {
-    final priceText = _priceText(item);
-    final subtitleBits = <String>[
-      if (item.brand != null && item.brand!.isNotEmpty) item.brand!,
-      item.barcode,
-    ];
-
+  Widget _dismissibleTile(
+    BuildContext context,
+    Item item,
+    ItemRepository repo,
+  ) {
     return Dismissible(
       key: Key('item-${item.id}'),
       direction: DismissDirection.endToStart,
@@ -196,7 +225,7 @@ class _ItemsScreenState extends State<ItemsScreen>
         );
         return confirmed ?? false;
       },
-      onDismissed: (_) => ItemRepository.instance.deleteById(item.id),
+      onDismissed: (_) => repo.deleteById(item.id),
       background: Container(
         color: Colors.redAccent,
         alignment: Alignment.centerRight,
@@ -205,26 +234,8 @@ class _ItemsScreenState extends State<ItemsScreen>
       ),
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: ListTile(
-          leading: (item.imageUrl != null && item.imageUrl!.isNotEmpty)
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.network(
-                    item.imageUrl!,
-                    width: 44,
-                    height: 44,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.inventory_2),
-                  ),
-                )
-              : const CircleAvatar(child: Icon(Icons.inventory_2)),
-          title: Text(item.name),
-          subtitle: Text(subtitleBits.join(' · ')),
-          trailing: priceText == null
-              ? null
-              : Text(priceText,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+        child: ItemListTile(
+          item: item,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => ItemEditScreen(item: item)),
           ),
@@ -232,20 +243,17 @@ class _ItemsScreenState extends State<ItemsScreen>
       ),
     );
   }
+}
 
-  String? _priceText(Item item) {
-    if (item.price == null) return null;
-    try {
-      return NumberFormat.simpleCurrency(name: item.currency ?? 'USD')
-          .format(item.price);
-    } catch (_) {
-      return '${item.currency ?? ''} ${item.price!.toStringAsFixed(2)}';
-    }
-  }
+class _HistoryTab extends StatelessWidget {
+  const _HistoryTab();
 
-  Widget _buildHistoryTab() {
+  @override
+  Widget build(BuildContext context) {
+    final repo = Provider.of<ItemRepository>(context, listen: false);
+
     return StreamBuilder<List<ScanEvent>>(
-      stream: ItemRepository.instance.watchScans(),
+      stream: repo.watchScans(),
       builder: (context, snapshot) {
         final scans = snapshot.data ?? [];
         if (scans.isEmpty) {
@@ -260,75 +268,83 @@ class _ItemsScreenState extends State<ItemsScreen>
           itemCount: scans.length + 1,
           separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (context, idx) {
-            if (idx == 0) {
-              return Padding(
-                padding: const EdgeInsets.all(12),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.delete_sweep),
-                    label: const Text('Clear history'),
-                    onPressed: () async {
-                      final ok = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('Clear scan history?'),
-                          content: const Text(
-                              'This removes the record of all past scans. '
-                              'Your saved items are not affected.'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('Cancel'),
-                            ),
-                            FilledButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              child: const Text('Clear'),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (ok == true) {
-                        await ItemRepository.instance.clearScanHistory();
-                      }
-                    },
-                  ),
-                ),
-              );
-            }
-            final scan = scans[idx - 1];
-            return FutureBuilder<Item?>(
-              future: scan.itemId == null
-                  ? Future.value(null)
-                  : ItemRepository.instance.findById(scan.itemId!),
-              builder: (context, itemSnap) {
-                final item = itemSnap.data;
-                return ListTile(
-                  leading: Icon(
-                    item == null ? Icons.help_outline : Icons.check_circle,
-                    color: item == null ? Colors.orange : Colors.tealAccent,
-                  ),
-                  title: Text(item?.name ?? 'Unknown barcode'),
-                  subtitle: Text(
-                    '${scan.barcode}\n${DateFormat.yMMMd().add_jm().format(scan.scannedAt)}'
-                    '${scan.format != null ? ' · ${scan.format}' : ''}',
-                  ),
-                  isThreeLine: true,
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ScanResultScreen(
-                          barcode: scan.barcode,
-                          format: scan.format,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            );
+            if (idx == 0) return _clearHistoryAction(context, repo);
+            return _ScanHistoryTile(scan: scans[idx - 1], repo: repo);
           },
+        );
+      },
+    );
+  }
+
+  Widget _clearHistoryAction(BuildContext context, ItemRepository repo) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: TextButton.icon(
+          icon: const Icon(Icons.delete_sweep),
+          label: const Text('Clear history'),
+          onPressed: () async {
+            final ok = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Clear scan history?'),
+                content: const Text(
+                    'This removes the record of all past scans. Your saved '
+                    'items are not affected.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text('Clear'),
+                  ),
+                ],
+              ),
+            );
+            if (ok == true) await repo.clearScanHistory();
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _ScanHistoryTile extends StatelessWidget {
+  const _ScanHistoryTile({required this.scan, required this.repo});
+
+  final ScanEvent scan;
+  final ItemRepository repo;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Item?>(
+      future:
+          scan.itemId == null ? Future.value(null) : repo.findById(scan.itemId!),
+      builder: (context, itemSnap) {
+        final item = itemSnap.data;
+        return ListTile(
+          leading: Icon(
+            item == null ? Icons.help_outline : Icons.check_circle,
+            color: item == null ? Colors.orange : Colors.tealAccent,
+          ),
+          title: Text(item?.name ?? 'Unknown barcode'),
+          subtitle: Text(
+            '${scan.barcode}\n${DateFormat.yMMMd().add_jm().format(scan.scannedAt)}'
+            '${scan.format != null ? ' · ${scan.format}' : ''}',
+          ),
+          isThreeLine: true,
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ScanResultScreen(
+                barcode: scan.barcode,
+                format: scan.format,
+              ),
+            ),
+          ),
         );
       },
     );

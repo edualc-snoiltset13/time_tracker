@@ -1,5 +1,6 @@
 // lib/screens/items/item_edit_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:time_tracker/models/item.dart';
 import 'package:time_tracker/services/item_repository.dart';
@@ -7,13 +8,9 @@ import 'package:time_tracker/services/item_repository.dart';
 /// Create or edit a barcoded item.
 ///
 /// If [item] is non-null, the form is pre-populated and saving updates it.
-/// Otherwise a new item is created. [prefilledBarcode] is used only for the
-/// create path and is ignored when editing.
+/// Otherwise a new item is created. [prefilledBarcode] and [remoteSeed]
+/// are ignored when editing.
 class ItemEditScreen extends StatefulWidget {
-  final Item? item;
-  final String? prefilledBarcode;
-  final RemoteDraftSeed? remoteSeed;
-
   const ItemEditScreen({
     super.key,
     this.item,
@@ -21,30 +18,12 @@ class ItemEditScreen extends StatefulWidget {
     this.remoteSeed,
   });
 
+  final Item? item;
+  final String? prefilledBarcode;
+  final RemoteItem? remoteSeed;
+
   @override
   State<ItemEditScreen> createState() => _ItemEditScreenState();
-}
-
-/// Minimal data needed to seed the form from a remote lookup. Declared here
-/// to avoid coupling the edit screen to the lookup service types.
-class RemoteDraftSeed {
-  final String name;
-  final String? brand;
-  final String? description;
-  final String? category;
-  final String? unit;
-  final String? imageUrl;
-  final String source;
-
-  const RemoteDraftSeed({
-    required this.name,
-    required this.source,
-    this.brand,
-    this.description,
-    this.category,
-    this.unit,
-    this.imageUrl,
-  });
 }
 
 class _ItemEditScreenState extends State<ItemEditScreen> {
@@ -65,32 +44,33 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   @override
   void initState() {
     super.initState();
-    if (_isEditing) {
-      final i = widget.item!;
-      _barcodeCtrl.text = i.barcode;
-      _nameCtrl.text = i.name;
-      _brandCtrl.text = i.brand ?? '';
-      _descriptionCtrl.text = i.description ?? '';
-      _categoryCtrl.text = i.category ?? '';
-      _unitCtrl.text = i.unit ?? '';
-      _priceCtrl.text = i.price?.toString() ?? '';
-      _currencyCtrl.text = i.currency ?? 'USD';
-      _imageUrl = i.imageUrl;
-      _source = i.source;
-    } else {
-      if (widget.prefilledBarcode != null) {
-        _barcodeCtrl.text = widget.prefilledBarcode!;
-      }
-      final seed = widget.remoteSeed;
-      if (seed != null) {
-        _nameCtrl.text = seed.name;
-        _brandCtrl.text = seed.brand ?? '';
-        _descriptionCtrl.text = seed.description ?? '';
-        _categoryCtrl.text = seed.category ?? '';
-        _unitCtrl.text = seed.unit ?? '';
-        _imageUrl = seed.imageUrl;
-        _source = seed.source;
-      }
+    final existing = widget.item;
+    if (existing != null) {
+      _barcodeCtrl.text = existing.barcode;
+      _nameCtrl.text = existing.name;
+      _brandCtrl.text = existing.brand ?? '';
+      _descriptionCtrl.text = existing.description ?? '';
+      _categoryCtrl.text = existing.category ?? '';
+      _unitCtrl.text = existing.unit ?? '';
+      _priceCtrl.text = existing.price?.toString() ?? '';
+      _currencyCtrl.text = existing.currency ?? 'USD';
+      _imageUrl = existing.imageUrl;
+      _source = existing.source;
+      return;
+    }
+
+    if (widget.prefilledBarcode != null) {
+      _barcodeCtrl.text = widget.prefilledBarcode!;
+    }
+    final seed = widget.remoteSeed;
+    if (seed != null) {
+      _nameCtrl.text = seed.name;
+      _brandCtrl.text = seed.brand ?? '';
+      _descriptionCtrl.text = seed.description ?? '';
+      _categoryCtrl.text = seed.category ?? '';
+      _unitCtrl.text = seed.unit ?? '';
+      _imageUrl = seed.imageUrl;
+      _source = seed.source;
     }
   }
 
@@ -107,10 +87,15 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     super.dispose();
   }
 
+  String? _trimmedOrNull(TextEditingController c) {
+    final v = c.text.trim();
+    return v.isEmpty ? null : v;
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final repo = ItemRepository.instance;
+    final repo = Provider.of<ItemRepository>(context, listen: false);
     final barcode = _barcodeCtrl.text.trim();
 
     if (!_isEditing) {
@@ -145,18 +130,12 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     if (_isEditing) {
       final updated = widget.item!.copyWith(
         name: _nameCtrl.text.trim(),
-        brand: _brandCtrl.text.trim().isEmpty ? null : _brandCtrl.text.trim(),
-        description: _descriptionCtrl.text.trim().isEmpty
-            ? null
-            : _descriptionCtrl.text.trim(),
-        category: _categoryCtrl.text.trim().isEmpty
-            ? null
-            : _categoryCtrl.text.trim(),
-        unit: _unitCtrl.text.trim().isEmpty ? null : _unitCtrl.text.trim(),
+        brand: _trimmedOrNull(_brandCtrl),
+        description: _trimmedOrNull(_descriptionCtrl),
+        category: _trimmedOrNull(_categoryCtrl),
+        unit: _trimmedOrNull(_unitCtrl),
         price: price,
-        currency: _currencyCtrl.text.trim().isEmpty
-            ? null
-            : _currencyCtrl.text.trim(),
+        currency: _trimmedOrNull(_currencyCtrl),
         imageUrl: _imageUrl,
         source: _source,
       );
@@ -165,18 +144,12 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
       await repo.upsert(
         barcode: barcode,
         name: _nameCtrl.text.trim(),
-        brand: _brandCtrl.text.trim().isEmpty ? null : _brandCtrl.text.trim(),
-        description: _descriptionCtrl.text.trim().isEmpty
-            ? null
-            : _descriptionCtrl.text.trim(),
-        category: _categoryCtrl.text.trim().isEmpty
-            ? null
-            : _categoryCtrl.text.trim(),
-        unit: _unitCtrl.text.trim().isEmpty ? null : _unitCtrl.text.trim(),
+        brand: _trimmedOrNull(_brandCtrl),
+        description: _trimmedOrNull(_descriptionCtrl),
+        category: _trimmedOrNull(_categoryCtrl),
+        unit: _trimmedOrNull(_unitCtrl),
         price: price,
-        currency: _currencyCtrl.text.trim().isEmpty
-            ? 'USD'
-            : _currencyCtrl.text.trim(),
+        currency: _trimmedOrNull(_currencyCtrl) ?? 'USD',
         imageUrl: _imageUrl,
         source: _source ?? 'manual',
       );
@@ -190,9 +163,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Item' : 'New Item'),
-        actions: [
-          IconButton(icon: const Icon(Icons.save), onPressed: _save),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.save), onPressed: _save)],
       ),
       body: Form(
         key: _formKey,
@@ -218,7 +189,6 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                 labelText: 'Barcode',
                 prefixIcon: Icon(Icons.qr_code),
               ),
-              keyboardType: TextInputType.text,
               enabled: !_isEditing,
               validator: (v) =>
                   v == null || v.trim().isEmpty ? 'Required' : null,
@@ -233,7 +203,8 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _brandCtrl,
-              decoration: const InputDecoration(labelText: 'Brand (optional)'),
+              decoration:
+                  const InputDecoration(labelText: 'Brand (optional)'),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -255,9 +226,8 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _priceCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Price (optional)',
-                    ),
+                    decoration:
+                        const InputDecoration(labelText: 'Price (optional)'),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),

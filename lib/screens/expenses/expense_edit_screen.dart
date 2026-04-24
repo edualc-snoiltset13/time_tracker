@@ -1,10 +1,11 @@
 // lib/screens/expenses/expense_edit_screen.dart
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import 'package:time_tracker/database/database.dart';
-import 'package:drift/drift.dart' as drift;
-import 'package:time_tracker/models/item.dart' as barcode;
+import 'package:time_tracker/models/item.dart';
 import 'package:time_tracker/screens/items/barcode_scanner_screen.dart';
 import 'package:time_tracker/screens/items/scan_result_screen.dart';
 
@@ -122,7 +123,8 @@ class _ExpenseEditScreenState extends State<ExpenseEditScreen> {
     );
     if (scan == null || !mounted) return;
 
-    final item = await Navigator.of(context).push<barcode.Item>(
+    // selectionMode: ScanResultScreen pops with an Item when user confirms.
+    final item = await Navigator.of(context).push<Item>(
       MaterialPageRoute(
         builder: (_) => ScanResultScreen(
           barcode: scan.barcode,
@@ -133,22 +135,35 @@ class _ExpenseEditScreenState extends State<ExpenseEditScreen> {
     );
     if (item == null || !mounted) return;
 
+    // Description: "Brand - Name" when a brand exists, else just Name.
+    final description = (item.brand == null || item.brand!.isEmpty)
+        ? item.name
+        : '${item.brand} - ${item.name}';
+
+    // Category policy: only overwrite the user's selection when the scanned
+    // item's category is one of the expense categories. Otherwise preserve
+    // whatever they had (including null) and mention the mismatch.
+    final scannedCategoryKnown =
+        item.category != null && _categories.contains(item.category);
+
     setState(() {
-      _descriptionController.text = item.brand == null || item.brand!.isEmpty
-          ? item.name
-          : '${item.brand} - ${item.name}';
+      _descriptionController.text = description;
       if (item.price != null) {
         _amountController.text = item.price!.toStringAsFixed(2);
       }
-      if (item.category != null && _categories.contains(item.category)) {
+      if (scannedCategoryKnown) {
         _selectedCategory = item.category;
-      } else {
-        _selectedCategory ??= 'Other';
       }
     });
 
+    final hint = scannedCategoryKnown
+        ? ''
+        : (item.category != null && item.category!.isNotEmpty
+            ? ' · item category "${item.category}" didn\'t match expense categories'
+            : '');
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Prefilled from "${item.name}"')),
+      SnackBar(content: Text('Prefilled from "${item.name}"$hint')),
     );
   }
 
@@ -241,7 +256,7 @@ class _ExpenseEditScreenState extends State<ExpenseEditScreen> {
           ],
           TextFormField(
             controller: _amountController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Total Amount',
               prefixText: 'USD ',
             ),

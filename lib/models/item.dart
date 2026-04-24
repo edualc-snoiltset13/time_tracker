@@ -128,6 +128,31 @@ class ScanEvent {
       );
 }
 
+/// A non-persisted item description, produced either by a remote API (e.g.
+/// Open Food Facts) or as a seed passed to the edit screen. The UI decides
+/// whether to turn this into a persisted [Item].
+class RemoteItem {
+  final String barcode;
+  final String name;
+  final String? brand;
+  final String? description;
+  final String? category;
+  final String? unit;
+  final String? imageUrl;
+  final String source;
+
+  const RemoteItem({
+    required this.barcode,
+    required this.name,
+    required this.source,
+    this.brand,
+    this.description,
+    this.category,
+    this.unit,
+    this.imageUrl,
+  });
+}
+
 String itemsToJson(List<Item> items) =>
     jsonEncode(items.map((i) => i.toJson()).toList());
 

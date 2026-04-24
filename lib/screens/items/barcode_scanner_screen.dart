@@ -12,9 +12,8 @@ class BarcodeScanResult {
 
 /// Full-screen camera-based barcode scanner.
 ///
-/// Pushes a [BarcodeScanResult] back to the caller via [Navigator.pop] as
-/// soon as the first valid barcode is detected. Returns null if the user
-/// cancels.
+/// Pops with a [BarcodeScanResult] as soon as the first valid barcode is
+/// detected. Pops with null if the user cancels.
 class BarcodeScannerScreen extends StatefulWidget {
   final String title;
 
@@ -31,7 +30,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   );
 
   bool _handled = false;
-  String? _error;
 
   @override
   void dispose() {
@@ -50,6 +48,37 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       );
       return;
     }
+  }
+
+  Future<void> _promptManualEntry() async {
+    final controller = TextEditingController();
+    final entered = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enter barcode'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(hintText: 'e.g. 5901234123457'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('Look up'),
+          ),
+        ],
+      ),
+    );
+    if (entered == null || entered.isEmpty || !mounted) return;
+    _handled = true;
+    Navigator.of(context).pop(
+      BarcodeScanResult(barcode: entered, format: 'MANUAL'),
+    );
   }
 
   @override
@@ -131,67 +160,22 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               ),
             ),
           ),
-          Positioned(
+          const Positioned(
             left: 0,
             right: 0,
             bottom: 32,
-            child: Column(
-              children: [
-                const Text(
-                  'Align the barcode within the frame',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    backgroundColor: Colors.black54,
-                  ),
-                ),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      _error!,
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                  ),
-              ],
+            child: Text(
+              'Align the barcode within the frame',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                backgroundColor: Colors.black54,
+              ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Future<void> _promptManualEntry() async {
-    final controller = TextEditingController();
-    final entered = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Enter barcode'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            hintText: 'e.g. 5901234123457',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: const Text('Look up'),
-          ),
-        ],
-      ),
-    );
-    if (entered == null || entered.isEmpty || !mounted) return;
-    _handled = true;
-    Navigator.of(context).pop(
-      BarcodeScanResult(barcode: entered, format: 'MANUAL'),
     );
   }
 }

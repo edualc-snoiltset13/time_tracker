@@ -1,27 +1,20 @@
 // lib/screens/items/scan_result_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import 'package:time_tracker/models/item.dart';
 import 'package:time_tracker/services/barcode_lookup_service.dart';
 import 'package:time_tracker/services/item_repository.dart';
 import 'package:time_tracker/screens/items/item_edit_screen.dart';
+import 'package:time_tracker/screens/items/widgets/item_detail_card.dart';
 
 /// Shows the outcome of a barcode lookup: a known local item, a remote
 /// suggestion that the user can save, or an unknown barcode with an option
 /// to register a new item.
 ///
-/// If the user taps "Use this item" (for scans launched from another screen),
-/// this screen pops with the resolved [Item]. Otherwise it pops with null.
+/// If [selectionMode] is true, pops with an [Item] once the user commits
+/// to one; otherwise the screen is purely informational and pops with null.
 class ScanResultScreen extends StatefulWidget {
-  final String barcode;
-  final String? format;
-
-  /// When true, shows a "Use this item" call-to-action that returns the
-  /// [Item] to the caller via [Navigator.pop]. Used when the scan was
-  /// initiated from a context that wants to consume the item (e.g. Expenses).
-  final bool selectionMode;
-
   const ScanResultScreen({
     super.key,
     required this.barcode,
@@ -29,25 +22,34 @@ class ScanResultScreen extends StatefulWidget {
     this.selectionMode = false,
   });
 
+  final String barcode;
+  final String? format;
+  final bool selectionMode;
+
   @override
   State<ScanResultScreen> createState() => _ScanResultScreenState();
 }
 
 class _ScanResultScreenState extends State<ScanResultScreen> {
-  late final BarcodeLookupService _lookup;
   late Future<BarcodeLookupResult> _future;
 
   @override
-  void initState() {
-    super.initState();
-    _lookup = BarcodeLookupService();
-    _future = _lookup.identify(widget.barcode, format: widget.format);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // `didChangeDependencies` matches the app's pattern (see
+    // project_edit_screen.dart) — Provider is available here but not in
+    // initState. The null check prevents re-running on every call.
+    _future = _identify();
   }
 
-  @override
-  void dispose() {
-    _lookup.dispose();
-    super.dispose();
+  Future<BarcodeLookupResult> _identify({bool recordScan = true}) {
+    final lookup = Provider.of<BarcodeLookupService>(context, listen: false);
+    return lookup.identify(widget.barcode,
+        format: widget.format, recordScan: recordScan);
+  }
+
+  void _reload({bool recordScan = false}) {
+    setState(() => _future = _identify(recordScan: recordScan));
   }
 
   @override
@@ -58,47 +60,91 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return _loading();
+            return _LoadingView(barcode: widget.barcode);
           }
           if (snapshot.hasError) {
-            return _unknown(error: snapshot.error.toString());
+            return _UnknownBarcode(
+              barcode: widget.barcode,
+              format: widget.format,
+              error: BarcodeLookupError.network,
+              onRegistered: () => _reload(),
+            );
           }
           final result = snapshot.data!;
           switch (result.source) {
             case BarcodeLookupSource.local:
-              return _local(result.item!);
+              return _LocalMatch(
+                item: result.item!,
+                selectionMode: widget.selectionMode,
+                onEdited: () => _reload(),
+              );
             case BarcodeLookupSource.remote:
-              return _remote(result.remoteDraft!);
+              return _RemoteSuggestion(
+                draft: result.remote!,
+                selectionMode: widget.selectionMode,
+                onSaved: (saved) {
+                  if (widget.selectionMode) {
+                    Navigator.of(context).pop(saved);
+                  } else {
+                    setState(() =>
+                        _future = Future.value(BarcodeLookupResult.local(saved)));
+                  }
+                },
+              );
             case BarcodeLookupSource.unknown:
-              return _unknown(error: result.error);
+              return _UnknownBarcode(
+                barcode: widget.barcode,
+                format: widget.format,
+                error: result.error,
+                onRegistered: () => _reload(),
+              );
           }
         },
       ),
     );
   }
+}
 
-  Widget _loading() {
+class _LoadingView extends StatelessWidget {
+  const _LoadingView({required this.barcode});
+  final String barcode;
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const CircularProgressIndicator(),
           const SizedBox(height: 16),
-          Text('Identifying ${widget.barcode}...'),
+          Text('Identifying $barcode...'),
         ],
       ),
     );
   }
+}
 
-  Widget _local(Item item) {
+class _LocalMatch extends StatelessWidget {
+  const _LocalMatch({
+    required this.item,
+    required this.selectionMode,
+    required this.onEdited,
+  });
+
+  final Item item;
+  final bool selectionMode;
+  final VoidCallback onEdited;
+
+  @override
+  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _badge('Matched in your library', Colors.tealAccent),
+        _Badge(text: 'Matched in your library', color: Colors.tealAccent),
         const SizedBox(height: 12),
-        _itemCard(item),
+        ItemDetailCard(item: item),
         const SizedBox(height: 24),
-        if (widget.selectionMode)
+        if (selectionMode)
           FilledButton.icon(
             icon: const Icon(Icons.check),
             label: const Text('Use this item'),
@@ -110,86 +156,57 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           label: const Text('Edit item'),
           onPressed: () async {
             final changed = await Navigator.of(context).push<bool>(
-              MaterialPageRoute(
-                builder: (_) => ItemEditScreen(item: item),
-              ),
+              MaterialPageRoute(builder: (_) => ItemEditScreen(item: item)),
             );
-            if (changed == true && mounted) {
-              setState(() {
-                _future = _lookup.identify(widget.barcode,
-                    format: widget.format, recordScan: false);
-              });
-            }
+            if (changed == true) onEdited();
           },
         ),
       ],
     );
   }
+}
 
-  Widget _remote(RemoteItemDraft draft) {
+class _RemoteSuggestion extends StatelessWidget {
+  const _RemoteSuggestion({
+    required this.draft,
+    required this.selectionMode,
+    required this.onSaved,
+  });
+
+  final RemoteItem draft;
+  final bool selectionMode;
+  final ValueChanged<Item> onSaved;
+
+  Future<Item> _persist(BuildContext context) {
+    final repo = Provider.of<ItemRepository>(context, listen: false);
+    return repo.upsert(
+      barcode: draft.barcode,
+      name: draft.name,
+      brand: draft.brand,
+      description: draft.description,
+      category: draft.category,
+      unit: draft.unit,
+      imageUrl: draft.imageUrl,
+      source: draft.source,
+      currency: 'USD',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _badge('Found via ${draft.source}', Colors.orangeAccent),
+        _Badge(text: 'Found via ${draft.source}', color: Colors.orangeAccent),
         const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (draft.imageUrl != null && draft.imageUrl!.isNotEmpty)
-                  Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        draft.imageUrl!,
-                        height: 140,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                Text(draft.name,
-                    style: Theme.of(context).textTheme.titleLarge),
-                if (draft.brand != null && draft.brand!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(draft.brand!,
-                        style: Theme.of(context).textTheme.bodyMedium),
-                  ),
-                if (draft.category != null && draft.category!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text('Category: ${draft.category}'),
-                  ),
-                if (draft.unit != null && draft.unit!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text('Quantity: ${draft.unit}'),
-                  ),
-                const SizedBox(height: 8),
-                Text('Barcode: ${widget.barcode}',
-                    style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-        ),
+        ItemDetailCard(remote: draft),
         const SizedBox(height: 16),
         FilledButton.icon(
           icon: const Icon(Icons.save),
           label: const Text('Save to my library'),
           onPressed: () async {
-            final saved = await _saveDraft(draft);
-            if (!mounted) return;
-            if (widget.selectionMode) {
-              Navigator.of(context).pop(saved);
-            } else {
-              setState(() {
-                _future = Future.value(BarcodeLookupResult.local(saved));
-              });
-            }
+            final saved = await _persist(context);
+            onSaved(saved);
           },
         ),
         const SizedBox(height: 8),
@@ -197,39 +214,68 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           icon: const Icon(Icons.edit),
           label: const Text('Review and edit before saving'),
           onPressed: () async {
-            final changed = await Navigator.of(context).push<bool>(
+            await Navigator.of(context).push<bool>(
               MaterialPageRoute(
                 builder: (_) => ItemEditScreen(
-                  prefilledBarcode: widget.barcode,
-                  remoteSeed: RemoteDraftSeed(
-                    name: draft.name,
-                    brand: draft.brand,
-                    description: draft.description,
-                    category: draft.category,
-                    unit: draft.unit,
-                    imageUrl: draft.imageUrl,
-                    source: draft.source,
-                  ),
+                  prefilledBarcode: draft.barcode,
+                  remoteSeed: draft,
                 ),
               ),
             );
-            if (changed == true && mounted) {
-              setState(() {
-                _future = _lookup.identify(widget.barcode,
-                    format: widget.format, recordScan: false);
-              });
+            // On return, let the parent re-run the lookup so it picks up
+            // the newly-persisted (or edited) item.
+            if (context.mounted && selectionMode) {
+              final repo =
+                  Provider.of<ItemRepository>(context, listen: false);
+              final saved = await repo.findByBarcode(draft.barcode);
+              if (saved != null) onSaved(saved);
             }
           },
         ),
       ],
     );
   }
+}
 
-  Widget _unknown({String? error}) {
+class _UnknownBarcode extends StatelessWidget {
+  const _UnknownBarcode({
+    required this.barcode,
+    required this.onRegistered,
+    this.format,
+    this.error,
+  });
+
+  final String barcode;
+  final String? format;
+  final BarcodeLookupError? error;
+  final VoidCallback onRegistered;
+
+  String get _errorMessage {
+    switch (error) {
+      case BarcodeLookupError.notFound:
+      case null:
+        return "This barcode isn't in your library and was not found in the "
+            'public database. Register it now so future scans recognize it.';
+      case BarcodeLookupError.network:
+        return "Couldn't reach the public barcode database. Register this "
+            'item manually, or try again when online.';
+      case BarcodeLookupError.timeout:
+        return 'The lookup timed out. Register this item manually or try '
+            'again — a weak connection can cause this.';
+      case BarcodeLookupError.parseError:
+        return 'The public database returned an unexpected response. '
+            'Register this item manually.';
+      case BarcodeLookupError.emptyInput:
+        return 'No barcode was provided.';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _badge('Unknown barcode', Colors.redAccent),
+        _Badge(text: 'Unknown barcode', color: Colors.redAccent),
         const SizedBox(height: 12),
         Card(
           child: Padding(
@@ -237,27 +283,15 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Barcode: ${widget.barcode}',
+                Text('Barcode: $barcode',
                     style: Theme.of(context).textTheme.titleMedium),
-                if (widget.format != null)
+                if (format != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text('Format: ${widget.format}'),
+                    child: Text('Format: $format'),
                   ),
                 const SizedBox(height: 12),
-                const Text(
-                  "This barcode isn't in your library and no match was "
-                  'found in the public database. Register it now so future '
-                  'scans will recognize it.',
-                ),
-                if (error != null && error.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      'Lookup error: $error',
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                  ),
+                Text(_errorMessage),
               ],
             ),
           ),
@@ -269,96 +303,24 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           onPressed: () async {
             final changed = await Navigator.of(context).push<bool>(
               MaterialPageRoute(
-                builder: (_) => ItemEditScreen(
-                  prefilledBarcode: widget.barcode,
-                ),
+                builder: (_) => ItemEditScreen(prefilledBarcode: barcode),
               ),
             );
-            if (changed == true && mounted) {
-              setState(() {
-                _future = _lookup.identify(widget.barcode,
-                    format: widget.format, recordScan: false);
-              });
-            }
+            if (changed == true) onRegistered();
           },
         ),
       ],
     );
   }
+}
 
-  Widget _itemCard(Item item) {
-    final priceText = _formatPrice(item);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (item.imageUrl != null && item.imageUrl!.isNotEmpty)
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    item.imageUrl!,
-                    height: 140,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 8),
-            Text(item.name, style: Theme.of(context).textTheme.titleLarge),
-            if (item.brand != null && item.brand!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(item.brand!,
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ),
-            if (item.category != null && item.category!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text('Category: ${item.category}'),
-              ),
-            if (item.unit != null && item.unit!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text('Unit: ${item.unit}'),
-              ),
-            if (priceText != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(priceText,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-              ),
-            const SizedBox(height: 8),
-            Text('Barcode: ${item.barcode}',
-                style: Theme.of(context).textTheme.bodySmall),
-            if (item.description != null && item.description!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(item.description!),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+class _Badge extends StatelessWidget {
+  const _Badge({required this.text, required this.color});
+  final String text;
+  final Color color;
 
-  String? _formatPrice(Item item) {
-    if (item.price == null) return null;
-    try {
-      final f =
-          NumberFormat.simpleCurrency(name: item.currency ?? 'USD');
-      return f.format(item.price);
-    } catch (_) {
-      return '${item.currency ?? ''} ${item.price!.toStringAsFixed(2)}';
-    }
-  }
-
-  Widget _badge(String text, Color color) {
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -367,20 +329,6 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         border: Border.all(color: color),
       ),
       child: Text(text, style: TextStyle(color: color)),
-    );
-  }
-
-  Future<Item> _saveDraft(RemoteItemDraft draft) {
-    return ItemRepository.instance.upsert(
-      barcode: widget.barcode,
-      name: draft.name,
-      brand: draft.brand,
-      description: draft.description,
-      category: draft.category,
-      unit: draft.unit,
-      imageUrl: draft.imageUrl,
-      source: draft.source,
-      currency: 'USD',
     );
   }
 }

@@ -8,37 +8,31 @@ import 'package:time_tracker/models/item.dart';
 import 'package:time_tracker/services/item_repository.dart';
 
 /// Where an identified item came from.
-enum BarcodeLookupSource {
-  /// Resolved from the local item database.
-  local,
+enum BarcodeLookupSource { local, remote, unknown }
 
-  /// Resolved from an external API (e.g. Open Food Facts).
-  remote,
-
-  /// The barcode is syntactically valid but could not be identified anywhere.
-  unknown,
-}
+/// Why a lookup ended in [BarcodeLookupSource.unknown]. Lets the UI render
+/// distinct messages without string-matching error text.
+enum BarcodeLookupError { notFound, network, timeout, parseError, emptyInput }
 
 /// Result of attempting to identify a barcode.
 class BarcodeLookupResult {
   final String barcode;
   final BarcodeLookupSource source;
 
-  /// The matched local item, if [source] is [BarcodeLookupSource.local].
+  /// Populated when [source] is [BarcodeLookupSource.local].
   final Item? item;
 
-  /// A draft item built from a remote lookup. Not persisted; the caller
-  /// decides whether to save it. Populated when [source] is
-  /// [BarcodeLookupSource.remote].
-  final RemoteItemDraft? remoteDraft;
+  /// Populated when [source] is [BarcodeLookupSource.remote].
+  final RemoteItem? remote;
 
-  final String? error;
+  /// Populated when [source] is [BarcodeLookupSource.unknown].
+  final BarcodeLookupError? error;
 
   const BarcodeLookupResult._({
     required this.barcode,
     required this.source,
     this.item,
-    this.remoteDraft,
+    this.remote,
     this.error,
   });
 
@@ -48,14 +42,17 @@ class BarcodeLookupResult {
         item: item,
       );
 
-  factory BarcodeLookupResult.remote(String barcode, RemoteItemDraft draft) =>
+  factory BarcodeLookupResult.remote(RemoteItem remote) =>
       BarcodeLookupResult._(
-        barcode: barcode,
+        barcode: remote.barcode,
         source: BarcodeLookupSource.remote,
-        remoteDraft: draft,
+        remote: remote,
       );
 
-  factory BarcodeLookupResult.unknown(String barcode, {String? error}) =>
+  factory BarcodeLookupResult.unknown(
+    String barcode,
+    BarcodeLookupError error,
+  ) =>
       BarcodeLookupResult._(
         barcode: barcode,
         source: BarcodeLookupSource.unknown,
@@ -67,38 +64,14 @@ class BarcodeLookupResult {
       source == BarcodeLookupSource.remote;
 }
 
-/// Lightweight, non-persisted data pulled from a remote API. The UI turns
-/// this into an [Item] if the user confirms.
-class RemoteItemDraft {
-  final String barcode;
-  final String name;
-  final String? brand;
-  final String? description;
-  final String? category;
-  final String? unit;
-  final String? imageUrl;
-  final String source;
-
-  const RemoteItemDraft({
-    required this.barcode,
-    required this.name,
-    required this.source,
-    this.brand,
-    this.description,
-    this.category,
-    this.unit,
-    this.imageUrl,
-  });
-}
-
 /// Identifies items by barcode. Checks the local repository first, then
 /// falls back to Open Food Facts (free, no auth required).
 class BarcodeLookupService {
   BarcodeLookupService({
-    ItemRepository? repository,
+    required ItemRepository repository,
     http.Client? httpClient,
     Duration timeout = const Duration(seconds: 6),
-  })  : _repository = repository ?? ItemRepository.instance,
+  })  : _repository = repository,
         _httpClient = httpClient ?? http.Client(),
         _timeout = timeout;
 
@@ -115,7 +88,7 @@ class BarcodeLookupService {
   }) async {
     final trimmed = barcode.trim();
     if (trimmed.isEmpty) {
-      return BarcodeLookupResult.unknown(barcode, error: 'Empty barcode');
+      return BarcodeLookupResult.unknown(barcode, BarcodeLookupError.emptyInput);
     }
 
     final local = await _repository.findByBarcode(trimmed);
@@ -130,44 +103,62 @@ class BarcodeLookupService {
       return BarcodeLookupResult.local(local);
     }
 
-    RemoteItemDraft? remote;
-    String? remoteError;
-    try {
-      remote = await _lookupOpenFoodFacts(trimmed);
-    } catch (e) {
-      remoteError = e.toString();
-    }
+    final remoteResult = await _lookupOpenFoodFacts(trimmed);
 
     if (recordScan) {
       await _repository.recordScan(barcode: trimmed, format: format);
     }
 
-    if (remote != null) return BarcodeLookupResult.remote(trimmed, remote);
-    return BarcodeLookupResult.unknown(trimmed, error: remoteError);
+    return remoteResult;
   }
 
-  /// Calls the Open Food Facts public API to try to identify a barcode.
-  /// Returns null when the product is not found.
-  Future<RemoteItemDraft?> _lookupOpenFoodFacts(String barcode) async {
+  /// Tries to identify a barcode via the Open Food Facts public API.
+  /// Returns a [BarcodeLookupResult] carrying either the remote item or a
+  /// typed error describing why nothing was produced.
+  Future<BarcodeLookupResult> _lookupOpenFoodFacts(String barcode) async {
     final uri = Uri.parse(
       'https://world.openfoodfacts.org/api/v2/product/$barcode.json',
     );
-    final response =
-        await _httpClient.get(uri).timeout(_timeout);
 
-    if (response.statusCode != 200) return null;
+    http.Response response;
+    try {
+      response = await _httpClient.get(uri).timeout(_timeout);
+    } on TimeoutException {
+      return BarcodeLookupResult.unknown(barcode, BarcodeLookupError.timeout);
+    } catch (_) {
+      return BarcodeLookupResult.unknown(barcode, BarcodeLookupError.network);
+    }
 
-    final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic>) return null;
+    if (response.statusCode != 200) {
+      return BarcodeLookupResult.unknown(barcode, BarcodeLookupError.network);
+    }
 
-    final status = decoded['status'];
-    if (status != 1) return null;
+    final Map<String, dynamic> decoded;
+    try {
+      final parsed = jsonDecode(response.body);
+      if (parsed is! Map<String, dynamic>) {
+        return BarcodeLookupResult.unknown(
+            barcode, BarcodeLookupError.parseError);
+      }
+      decoded = parsed;
+    } catch (_) {
+      return BarcodeLookupResult.unknown(
+          barcode, BarcodeLookupError.parseError);
+    }
+
+    if (decoded['status'] != 1) {
+      return BarcodeLookupResult.unknown(barcode, BarcodeLookupError.notFound);
+    }
 
     final product = decoded['product'];
-    if (product is! Map<String, dynamic>) return null;
+    if (product is! Map<String, dynamic>) {
+      return BarcodeLookupResult.unknown(barcode, BarcodeLookupError.notFound);
+    }
 
     final name = (product['product_name'] as String?)?.trim();
-    if (name == null || name.isEmpty) return null;
+    if (name == null || name.isEmpty) {
+      return BarcodeLookupResult.unknown(barcode, BarcodeLookupError.notFound);
+    }
 
     final brand = (product['brands'] as String?)?.split(',').first.trim();
     final category =
@@ -177,7 +168,7 @@ class BarcodeLookupService {
         (product['image_url'] as String?) ??
         (product['image_front_small_url'] as String?);
 
-    return RemoteItemDraft(
+    return BarcodeLookupResult.remote(RemoteItem(
       barcode: barcode,
       name: name,
       brand: (brand != null && brand.isNotEmpty) ? brand : null,
@@ -186,7 +177,7 @@ class BarcodeLookupService {
       unit: (quantity != null && quantity.isNotEmpty) ? quantity : null,
       imageUrl: imageUrl,
       source: 'openfoodfacts',
-    );
+    ));
   }
 
   void dispose() {

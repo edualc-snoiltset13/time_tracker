@@ -8,42 +8,48 @@ import 'package:uuid/uuid.dart';
 
 import 'package:time_tracker/models/item.dart';
 
+/// Resolves the directory that backs the JSON files. Overridable so tests
+/// can point the repository at a temp dir without touching path_provider.
+typedef DirectoryResolver = Future<Directory> Function();
+
 /// File-backed repository for barcoded items and scan events.
 ///
 /// Items are keyed by barcode (unique). Each write persists the full list
 /// as JSON and pushes to the broadcast streams so UI widgets can rebuild.
+///
+/// Not a singleton — one instance per app, registered via `Provider` in
+/// `main.dart`. Accepts a [dirResolver] for tests.
 class ItemRepository {
-  ItemRepository._();
-  static final ItemRepository instance = ItemRepository._();
+  ItemRepository({
+    DirectoryResolver? dirResolver,
+    Uuid? uuid,
+  })  : _dirResolver = dirResolver ?? getApplicationSupportDirectory,
+        _uuid = uuid ?? const Uuid();
 
   static const _itemsFileName = 'items.json';
   static const _scansFileName = 'barcode_scans.json';
   static const _maxScanHistory = 500;
 
-  final _uuid = const Uuid();
+  final DirectoryResolver _dirResolver;
+  final Uuid _uuid;
 
   final _itemsController = StreamController<List<Item>>.broadcast();
   final _scansController = StreamController<List<ScanEvent>>.broadcast();
 
   List<Item>? _cachedItems;
   List<ScanEvent>? _cachedScans;
-  bool _initialized = false;
   Future<void>? _initFuture;
 
   Future<File> _fileFor(String name) async {
-    final dir = await getApplicationSupportDirectory();
+    final dir = await _dirResolver();
     return File(p.join(dir.path, name));
   }
 
-  Future<void> _ensureInit() {
-    return _initFuture ??= _init();
-  }
+  Future<void> _ensureInit() => _initFuture ??= _init();
 
   Future<void> _init() async {
-    if (_initialized) return;
     _cachedItems = await _loadItems();
     _cachedScans = await _loadScans();
-    _initialized = true;
     _itemsController.add(List.unmodifiable(_cachedItems!));
     _scansController.add(List.unmodifiable(_cachedScans!));
   }
@@ -52,8 +58,7 @@ class ItemRepository {
     final file = await _fileFor(_itemsFileName);
     if (!await file.exists()) return [];
     try {
-      final raw = await file.readAsString();
-      return itemsFromJson(raw);
+      return itemsFromJson(await file.readAsString());
     } catch (_) {
       return [];
     }
@@ -63,8 +68,7 @@ class ItemRepository {
     final file = await _fileFor(_scansFileName);
     if (!await file.exists()) return [];
     try {
-      final raw = await file.readAsString();
-      return scansFromJson(raw);
+      return scansFromJson(await file.readAsString());
     } catch (_) {
       return [];
     }
@@ -72,13 +76,13 @@ class ItemRepository {
 
   Future<void> _persistItems() async {
     final file = await _fileFor(_itemsFileName);
-    await file.writeAsString(itemsToJson(_cachedItems ?? []));
+    await file.writeAsString(itemsToJson(_cachedItems ?? const []));
     _itemsController.add(List.unmodifiable(_cachedItems ?? const []));
   }
 
   Future<void> _persistScans() async {
     final file = await _fileFor(_scansFileName);
-    await file.writeAsString(scansToJson(_cachedScans ?? []));
+    await file.writeAsString(scansToJson(_cachedScans ?? const []));
     _scansController.add(List.unmodifiable(_cachedScans ?? const []));
   }
 
@@ -133,12 +137,10 @@ class ItemRepository {
   }) async {
     await _ensureInit();
     final now = DateTime.now();
-    final existingIdx =
-        _cachedItems!.indexWhere((i) => i.barcode == barcode);
+    final existingIdx = _cachedItems!.indexWhere((i) => i.barcode == barcode);
 
     if (existingIdx >= 0) {
-      final existing = _cachedItems![existingIdx];
-      final updated = existing.copyWith(
+      final updated = _cachedItems![existingIdx].copyWith(
         name: name,
         brand: brand,
         description: description,
