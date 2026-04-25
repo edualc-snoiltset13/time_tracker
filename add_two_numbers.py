@@ -3,8 +3,6 @@ def add(a, b):
 
 
 if __name__ == "__main__":
-    x, y = 3, 7
-    print(f"{x} + {y} = {add(x, y)}")
-
-    x, y = -4, 10
-    print(f"{x} + {y} = {add(x, y)}")
+    print(add(3, 5))
+    print(add(-1, 7))
+    print(add(0.5, 2.5))
