@@ -145,6 +145,87 @@ If you have a suggestion that would make this better, please fork the repo and c
 
 -----
 
+---
+
+## 🐍 Python CLI Time Tracker (`time_tracker.py`)
+
+A zero-dependency Python 3 command-line tool that lets you start/stop a personal
+time tracker from any terminal. State persists to `~/.time_tracker.json`.
+
+### Installation
+
+```sh
+# Make executable (already set in repo)
+chmod +x time_tracker.py
+
+# Optional: put it on your PATH
+cp time_tracker.py ~/.local/bin/time_tracker
+```
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `start <task...>` | Begin tracking a task |
+| `stop` | Stop the current task and save the entry |
+| `status` | Show the active task and elapsed time |
+| `log [n]` | Print the last *n* entries (default 10) |
+| `summary` | Print total time per task, sorted descending |
+
+### Example session
+
+```
+$ ./time_tracker.py start writing proposal
+Started tracking 'writing proposal' at 2024-06-01T09:00:00+02:00.
+
+$ ./time_tracker.py status
+Tracking: 'writing proposal'
+  Started : 2024-06-01T09:00:00+02:00
+  Elapsed : 0h 32m 14s
+
+$ ./time_tracker.py stop
+Stopped 'writing proposal'. Duration: 0h 32m 14s.
+
+$ ./time_tracker.py start code review
+Started tracking 'code review' at 2024-06-01T09:32:14+02:00.
+
+$ ./time_tracker.py stop
+Stopped 'code review'. Duration: 0h 18m 05s.
+
+$ ./time_tracker.py log
+2024-06-01T09:00:00+02:00       0h 32m 14s  writing proposal
+2024-06-01T09:32:14+02:00       0h 18m 5s  code review
+
+$ ./time_tracker.py summary
+       0h 32m 14s  writing proposal
+        0h 18m 5s  code review
+```
+
+### Data file
+
+```json
+{
+  "current": null,
+  "entries": [
+    {
+      "task": "writing proposal",
+      "start": "2024-06-01T09:00:00+02:00",
+      "end": "2024-06-01T09:32:14+02:00",
+      "duration_seconds": 1934.0
+    }
+  ]
+}
+```
+
+### Running the tests
+
+```sh
+pip install pytest
+pytest test_time_tracker.py -v
+```
+
+---
+
 ## 📝 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
