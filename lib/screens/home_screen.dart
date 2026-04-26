@@ -119,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search tasks...',
+                hintText: 'Search title, description, category, project...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -146,8 +146,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 final todosWithProjects = _searchQuery.isEmpty
                     ? allTodos
                     : allTodos.where((row) {
-                        final title = row.readTable(db.todos).title.toLowerCase();
-                        return title.contains(_searchQuery);
+                        final todo = row.readTable(db.todos);
+                        final project = row.readTable(db.projects);
+                        // Multi-field match: title, description, category, project name.
+                        final haystack = [
+                          todo.title,
+                          todo.description ?? '',
+                          todo.category,
+                          project.name,
+                        ].join(' ').toLowerCase();
+                        return haystack.contains(_searchQuery);
                       }).toList();
 
                 if (allTodos.isEmpty &&
