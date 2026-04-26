@@ -7,7 +7,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:time_tracker/screens/todos/todo_edit_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onStartTracker;
+  const HomeScreen({super.key, this.onStartTracker});
 
   // Method to start a timer from a task
   void _startTimerFromTodo(BuildContext context, Todo todo) async {
@@ -41,9 +42,8 @@ class HomeScreen extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Timer for "${todo.title}" has started!')),
     );
-    
-    // TODO: Consider navigating to the Time Tracker tab
-    // This requires a more complex state management setup to control the BottomNavigationBar index from here.
+
+    onStartTracker?.call();
   }
   
   // Method to clear all completed tasks

@@ -19,11 +19,12 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  static const int _trackerTabIndex = 1;
+
   int _selectedIndex = 0;
 
-  // This list now correctly references the imported screen classes.
-  final List<Widget> _screens = <Widget>[
-    const HomeScreen(),
+  late final List<Widget> _screens = <Widget>[
+    HomeScreen(onStartTracker: () => _onItemTapped(_trackerTabIndex)),
     const TimeTrackerScreen(),
     const ProjectsScreen(),
     const ClientsScreen(),
