@@ -14,12 +14,21 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Drives the search TextField. Owned by this State so its lifecycle
+  // matches the screen and survives parent rebuilds.
   final TextEditingController _searchController = TextEditingController();
+
+  // Lowercased mirror of _searchController.text. Cached as a separate
+  // field so the StreamBuilder can do a cheap `.contains` per row
+  // without re-lowercasing on every list build.
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    // Listener bridges TextEditingController -> setState so the list
+    // re-filters on every keystroke. Lowercase here once instead of in
+    // the per-row filter loop.
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -29,6 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    // Required: TextEditingController holds a ChangeNotifier subscription
+    // that will leak if not disposed when the State is removed.
     _searchController.dispose();
     super.dispose();
   }
@@ -114,6 +125,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Column(
         children: [
+          // Search bar pinned above the task list. Sits inside a Column
+          // (not the AppBar) so it stays visible while the list scrolls
+          // and so MainScreen's AppBar title is unaffected.
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
             child: TextField(
@@ -121,6 +135,8 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: InputDecoration(
                 hintText: 'Search title, description, category, project...',
                 prefixIcon: const Icon(Icons.search),
+                // Clear button only appears when there's text to clear,
+                // so the field doesn't show a useless "x" when empty.
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -143,12 +159,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 final allTodos = snapshot.data ?? [];
+                // Filter in-memory rather than rebuilding the drift query
+                // on every keystroke: avoids resubscribing the stream and
+                // lets us search across joined columns uniformly.
                 final todosWithProjects = _searchQuery.isEmpty
                     ? allTodos
                     : allTodos.where((row) {
                         final todo = row.readTable(db.todos);
                         final project = row.readTable(db.projects);
-                        // Multi-field match: title, description, category, project name.
+                        // Concatenating into one lowercase haystack lets a
+                        // single `contains` cover all four fields and
+                        // implicitly matches across field boundaries
+                        // (e.g. typing the project name finds its tasks).
                         final haystack = [
                           todo.title,
                           todo.description ?? '',
@@ -158,6 +180,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         return haystack.contains(_searchQuery);
                       }).toList();
 
+                // Distinguish "DB is empty" from "search filtered all out"
+                // so the empty-state copy tells the user what to do next.
                 if (allTodos.isEmpty &&
                     snapshot.connectionState == ConnectionState.active) {
                   return const Center(
