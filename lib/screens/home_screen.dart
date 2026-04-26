@@ -6,8 +6,32 @@ import 'package:time_tracker/database/database.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:time_tracker/screens/todos/todo_edit_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   // Method to start a timer from a task
   void _startTimerFromTodo(BuildContext context, Todo todo) async {
@@ -30,7 +54,7 @@ class HomeScreen extends StatelessWidget {
       description: drift.Value(todo.title),
       projectId: drift.Value(todo.projectId),
       category: drift.Value(todo.category),
-      isBillable: const drift.Value(true), // Default to billable
+      isBillable: const drift.Value(true),
       startTime: drift.Value(DateTime.now()),
     );
 
@@ -41,15 +65,12 @@ class HomeScreen extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Timer for "${todo.title}" has started!')),
     );
-    
-    // TODO: Consider navigating to the Time Tracker tab
-    // This requires a more complex state management setup to control the BottomNavigationBar index from here.
   }
-  
+
   // Method to clear all completed tasks
   void _clearCompletedTasks(BuildContext context) async {
     final db = Provider.of<AppDatabase>(context, listen: false);
-    
+
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -91,82 +112,118 @@ class HomeScreen extends StatelessWidget {
     ]);
 
     return Scaffold(
-      body: StreamBuilder(
-        stream: query.watch(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final todosWithProjects = snapshot.data ?? [];
-
-          if (todosWithProjects.isEmpty &&
-              snapshot.connectionState == ConnectionState.active) {
-            return const Center(
-              child: Text("No tasks found. Click '+' to plan your work!"),
-            );
-          }
-
-          return ListView.builder(
-            itemCount: todosWithProjects.length,
-            itemBuilder: (context, index) {
-              final result = todosWithProjects[index];
-              final todo = result.readTable(db.todos);
-              final project = result.readTable(db.projects);
-
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: ListTile(
-                  leading: Checkbox(
-                    value: todo.isCompleted,
-                    onChanged: (bool? value) {
-                      db.update(db.todos).replace(
-                            todo.copyWith(isCompleted: value ?? false),
-                          );
-                    },
-                  ),
-                  title: Text(
-                    todo.title,
-                    style: TextStyle(
-                      decoration: todo.isCompleted
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                  subtitle: Text(
-                    '${project.name} - Deadline: ${DateFormat.yMd().add_jm().format(todo.deadline)}',
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Chip(
-                        label: Text(
-                          todo.priority,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: _getPriorityColor(todo.priority),
-                      ),
-                      const SizedBox(width: 8),
-                      // The new Start Timer button
-                      IconButton(
-                        icon: const Icon(Icons.play_circle_outline),
-                        tooltip: 'Start Timer for this Task',
-                        onPressed: () => _startTimerFromTodo(context, todo),
-                      ),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => TodoEditScreen(todo: todo),
-                    ));
-                  },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search tasks...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () => _searchController.clear(),
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              );
-            },
-          );
-        },
+                isDense: true,
+              ),
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder(
+              stream: query.watch(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final allTodos = snapshot.data ?? [];
+                final todosWithProjects = _searchQuery.isEmpty
+                    ? allTodos
+                    : allTodos.where((row) {
+                        final title = row.readTable(db.todos).title.toLowerCase();
+                        return title.contains(_searchQuery);
+                      }).toList();
+
+                if (allTodos.isEmpty &&
+                    snapshot.connectionState == ConnectionState.active) {
+                  return const Center(
+                    child: Text("No tasks found. Click '+' to plan your work!"),
+                  );
+                }
+
+                if (todosWithProjects.isEmpty) {
+                  return const Center(
+                    child: Text('No tasks match your search.'),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: todosWithProjects.length,
+                  itemBuilder: (context, index) {
+                    final result = todosWithProjects[index];
+                    final todo = result.readTable(db.todos);
+                    final project = result.readTable(db.projects);
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: ListTile(
+                        leading: Checkbox(
+                          value: todo.isCompleted,
+                          onChanged: (bool? value) {
+                            db.update(db.todos).replace(
+                                  todo.copyWith(isCompleted: value ?? false),
+                                );
+                          },
+                        ),
+                        title: Text(
+                          todo.title,
+                          style: TextStyle(
+                            decoration: todo.isCompleted
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${project.name} - Deadline: ${DateFormat.yMd().add_jm().format(todo.deadline)}',
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Chip(
+                              label: Text(
+                                todo.priority,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: _getPriorityColor(todo.priority),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.play_circle_outline),
+                              tooltip: 'Start Timer for this Task',
+                              onPressed: () => _startTimerFromTodo(context, todo),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => TodoEditScreen(todo: todo),
+                          ));
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
-      // Use a Row for multiple FloatingActionButtons
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -174,7 +231,7 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => _clearCompletedTasks(context),
             label: const Text('Clear Completed'),
             icon: const Icon(Icons.delete_sweep),
-            heroTag: 'clear_tasks', // Hero tags must be unique
+            heroTag: 'clear_tasks',
           ),
           const SizedBox(width: 16),
           FloatingActionButton(
