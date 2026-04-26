@@ -109,7 +109,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         final month = i + 1;
         return BarChartGroupData(
           x: month,
-          barRods: [BarChartRodData(toY: hoursPerGroup[month] ?? 0, width: 15, borderRadius: BorderRadius.circular(4))],
+          barRods: [BarChartRodData(toY: hoursPerGroup[month] ?? 0, color: Colors.deepPurple, width: 15, borderRadius: BorderRadius.circular(4))],
         );
       });
     } else {
@@ -117,7 +117,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         final day = i + 1;
         return BarChartGroupData(
           x: day,
-          barRods: [BarChartRodData(toY: hoursPerGroup[day] ?? 0, width: 15, borderRadius: BorderRadius.circular(4))],
+          barRods: [BarChartRodData(toY: hoursPerGroup[day] ?? 0, color: Colors.deepPurple, width: 15, borderRadius: BorderRadius.circular(4))],
         );
       });
     }

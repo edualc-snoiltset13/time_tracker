@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         primaryColor: Colors.deepPurple,
         scaffoldBackgroundColor: const Color.fromARGB(255, 28, 25, 38),
-        cardColor: const Color.fromARGB(255, 0, 0, 0),
+        cardColor: const Color(0xFF1E1E1E),
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.deepPurple,
           brightness: Brightness.dark,
