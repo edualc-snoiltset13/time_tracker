@@ -19,11 +19,20 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  // Position of the Time Tracker tab in the BottomNavigationBar. Kept as
+  // a named constant so the _screens list and any future jumps stay in
+  // sync if the tab order changes.
   static const int _trackerTabIndex = 1;
 
   int _selectedIndex = 0;
 
+  // `late final` (not `final` with a literal) so we can reference the
+  // instance method `_onItemTapped` when wiring HomeScreen's
+  // onStartTracker callback. The list itself is built once and reused.
   late final List<Widget> _screens = <Widget>[
+    // HomeScreen asks us to switch tabs after it starts a timer from a
+    // task; route that request to _onItemTapped so the bottom nav index
+    // stays the single source of truth.
     HomeScreen(onStartTracker: () => _onItemTapped(_trackerTabIndex)),
     const TimeTrackerScreen(),
     const ProjectsScreen(),

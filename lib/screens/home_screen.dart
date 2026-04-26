@@ -7,6 +7,9 @@ import 'package:drift/drift.dart' as drift;
 import 'package:time_tracker/screens/todos/todo_edit_screen.dart';
 
 class HomeScreen extends StatelessWidget {
+  // Invoked after a timer is successfully started from a task, so the
+  // parent (MainScreen) can switch the BottomNavigationBar to the Time
+  // Tracker tab. Optional so HomeScreen can still be used standalone.
   final VoidCallback? onStartTracker;
   const HomeScreen({super.key, this.onStartTracker});
 
@@ -43,6 +46,8 @@ class HomeScreen extends StatelessWidget {
       SnackBar(content: Text('Timer for "${todo.title}" has started!')),
     );
 
+    // Hand control back to the parent so it can navigate to the Time
+    // Tracker tab. No-op if no callback was provided.
     onStartTracker?.call();
   }
   
