@@ -5,14 +5,17 @@ import 'package:time_tracker/database/database.dart';
 import 'package:time_tracker/screens/main_screen.dart'; // Import the main screen with the navigation bar
 import 'package:time_tracker/services/idle_service.dart';
 
+// Application entry point. Sets up app-wide providers and launches MyApp.
 void main() {
   runApp(
     MultiProvider(
       providers: [
+        // Drift database — closed automatically when the provider is disposed.
         Provider<AppDatabase>(
           create: (context) => AppDatabase(),
           dispose: (context, db) => db.close(),
         ),
+        // Tracks user activity to detect idle periods during time tracking.
         Provider<IdleService>(
           create: (context) => IdleService(),
         ),
@@ -28,6 +31,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final idleService = Provider.of<IdleService>(context, listen: false);
+    // Wrap the whole app in a Listener so any pointer interaction resets the idle timer.
     return Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => idleService.recordActivity(),
