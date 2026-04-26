@@ -44,13 +44,16 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // Method to start a timer from a task
+  // Inserts a new running TimeEntry seeded from the todo's title, project,
+  // and category. Enforces a single-timer-at-a-time invariant before inserting.
   void _startTimerFromTodo(BuildContext context, Todo todo) async {
     final db = Provider.of<AppDatabase>(context, listen: false);
 
-    // Check if another timer is already running
+    // Check if another timer is already running (endTime IS NULL means active).
     final activeTimers = await (db.select(db.timeEntries)..where((t) => t.endTime.isNull())).get();
 
+    // Guard required after every `await`: the widget tree may have been
+    // unmounted while the DB call was in-flight.
     if (!context.mounted) return;
 
     if (activeTimers.isNotEmpty) {
@@ -71,6 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     await db.into(db.timeEntries).insert(newEntry);
 
+    // Second mounted guard: insert is also async.
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -78,10 +82,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Method to clear all completed tasks
+  // Shows a confirmation dialog before bulk-deleting completed todos.
+  // Returns early (no-op) when the user dismisses without confirming.
   void _clearCompletedTasks(BuildContext context) async {
     final db = Provider.of<AppDatabase>(context, listen: false);
 
+    // showDialog is async; the widget may be unmounted by the time it resolves.
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -115,6 +121,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final db = Provider.of<AppDatabase>(context);
+    // Join todos with their projects so the list can display project name
+    // and the search can match on it. Sorted ascending by deadline so the
+    // most urgent tasks surface at the top.
     final query = (db.select(db.todos)
           ..orderBy([(t) => drift.OrderingTerm(expression: t.deadline)]))
         .join([
@@ -205,6 +214,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: ListTile(
+                        // Inline checkbox persists the completion toggle
+                        // immediately without requiring a separate save action.
                         leading: Checkbox(
                           value: todo.isCompleted,
                           onChanged: (bool? value) {
@@ -215,6 +226,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         title: Text(
                           todo.title,
+                          // Strike-through signals completion without hiding
+                          // the title, so users can still read what was done.
                           style: TextStyle(
                             decoration: todo.isCompleted
                                 ? TextDecoration.lineThrough
@@ -256,6 +269,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      // Two FABs side-by-side. `heroTag` must be unique per FAB within
+      // the same route; Flutter throws if two FABs share the same tag.
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -280,6 +295,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Maps the three priority levels to a traffic-light palette.
+  // P1 (urgent) red → P2 (medium) orange → P3 (low) blue.
+  // Falls back to grey for any unrecognised value.
   Color _getPriorityColor(String priority) {
     switch (priority) {
       case 'P1':
