@@ -10,6 +10,7 @@ import 'package:time_tracker/screens/projects/projects_screen.dart';
 import 'package:time_tracker/screens/reports/reports_screen.dart';
 import 'package:time_tracker/screens/settings/settings_screen.dart';
 import 'package:time_tracker/screens/time_tracker/time_tracker_screen.dart';
+import 'package:time_tracker/screens/timer/timer_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -25,6 +26,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = <Widget>[
     const HomeScreen(),
     const TimeTrackerScreen(),
+    const TimerScreen(),
     const ProjectsScreen(),
     const ClientsScreen(),
     const ExpensesScreen(),
@@ -36,6 +38,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<String> _titles = const <String>[
     'Tasks To-Do',
     'Time Tracker',
+    'Timer',
     'Projects',
     'Clients',
     'Expenses',
@@ -68,6 +71,10 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.timer),
             label: 'Tracker',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.hourglass_empty),
+            label: 'Timer',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.folder),
