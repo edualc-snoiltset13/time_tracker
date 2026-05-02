@@ -1,10 +1,10 @@
-// lib/screens/settings/settings_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:time_tracker/database/database.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:time_tracker/utils/csv_helper.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -32,7 +32,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (settings != null) {
       _nameController.text = settings.companyName;
       _addressController.text = settings.companyAddress;
-      // FIX: Corrected typo from logoPath to logoPath and handled null
       if (settings.logoPath != null) {
         _logo = File(settings.logoPath!);
       }
@@ -58,7 +57,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       id: const drift.Value(1),
       companyName: drift.Value(_nameController.text),
       companyAddress: drift.Value(_addressController.text),
-      // FIX: Corrected typo from logoPath to logoPath
       logoPath: _logo != null ? drift.Value(_logo!.path) : const drift.Value.absent(),
       showLetterhead: drift.Value(_showLetterhead),
     );
@@ -68,6 +66,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved successfully.')));
     }
+  }
+
+  Future<void> _exportCSV(String tableName, String label) async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    final path = await exportTableToCSV(db: db, tableName: tableName);
+    if (!mounted) return;
+
+    if (path != null) {
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text('$label exported to $path')));
+    } else {
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text('No $label data to export.')));
+    }
+  }
+
+  Future<void> _importCSV(String tableName, String label) async {
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    final result = await importTableFromCSV(db: db, tableName: tableName);
+    if (!mounted) return;
+
+    if (result.errors.isNotEmpty && result.inserted == 0) {
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Import failed: ${result.errors.first}')));
+    } else {
+      final msg = StringBuffer('Imported ${result.inserted} $label');
+      if (result.skipped > 0) msg.write(', ${result.skipped} skipped');
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text(msg.toString())));
+    }
+  }
+
+  void _showImportExportDialog(String tableName, String label) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(label),
+        content: Text('Choose an action for $label data.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _importCSV(tableName, label);
+            },
+            child: const Text('Import CSV'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _exportCSV(tableName, label);
+            },
+            child: const Text('Export CSV'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -117,9 +171,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: _saveSettings,
               child: const Text('Save Settings'),
             ),
+            const SizedBox(height: 32),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text('Import / Export Data', style: Theme.of(context).textTheme.titleMedium),
+            ),
+            _buildDataTile(Icons.people, 'Clients', 'clients'),
+            _buildDataTile(Icons.folder, 'Projects', 'projects'),
+            _buildDataTile(Icons.timer, 'Time Entries', 'time_entries'),
+            _buildDataTile(Icons.receipt, 'Expenses', 'expenses'),
+            _buildDataTile(Icons.request_quote, 'Invoices', 'invoices'),
+            _buildDataTile(Icons.list_alt, 'Todos', 'todos'),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDataTile(IconData icon, String label, String tableName) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      trailing: const Icon(Icons.swap_horiz),
+      onTap: () => _showImportExportDialog(tableName, label),
     );
   }
 }
