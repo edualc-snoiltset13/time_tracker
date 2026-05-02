@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Sales from "./pages/Sales";
 import NewSale from "./pages/NewSale";
+import Comparisons from "./pages/Comparisons";
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
           <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
           <Route path="/sales/new" element={<ProtectedRoute><NewSale /></ProtectedRoute>} />
+          <Route path="/comparisons" element={<ProtectedRoute><Comparisons /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

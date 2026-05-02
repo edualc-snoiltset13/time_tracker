@@ -24,11 +24,12 @@ def create_app(config_class=Config):
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     # Register blueprints
-    from routes import auth_bp, products_bp, sales_bp, dashboard_bp
+    from routes import auth_bp, products_bp, sales_bp, dashboard_bp, comparisons_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(products_bp)
     app.register_blueprint(sales_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(comparisons_bp)
 
     # Global error handlers
     @app.errorhandler(400)

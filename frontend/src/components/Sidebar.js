@@ -21,6 +21,9 @@ export default function Sidebar() {
         <NavLink to="/sales/new" className={({ isActive }) => (isActive ? "active" : "")}>
           + New Sale
         </NavLink>
+        <NavLink to="/comparisons" className={({ isActive }) => (isActive ? "active" : "")}>
+          Comparisons
+        </NavLink>
       </nav>
       <div className="sidebar-footer">
         <div>
