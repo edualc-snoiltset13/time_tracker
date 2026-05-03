@@ -63,7 +63,7 @@ dev_dependencies:
     sdk: flutter
   # Database code generation
   drift_dev: ^2.31.0
-  build_runner: ^2.14.1
+  build_runner: ^2.15.0
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
