@@ -32,7 +32,7 @@ dependencies:
     sdk: flutter
     
   # Database (Local Storage)
-  drift: ^2.31.0
+  drift: ^2.33.0
   sqlite3_flutter_libs: ^0.5.42
   path_provider: ^2.1.5
   path: ^1.9.1
@@ -62,7 +62,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   # Database code generation
-  drift_dev: ^2.31.0
+  drift_dev: ^2.33.0
   build_runner: ^2.15.0
 
 
@@ -109,7 +109,6 @@ flutter:
   #   - family: Trajan Pro
   #     fonts:
   #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #
   # For details regarding fonts from package dependencies,
