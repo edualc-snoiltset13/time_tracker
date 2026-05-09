@@ -57,7 +57,7 @@ dependencies:
   # instance-based to static methods (FilePicker.pickFiles() etc.).
   # Requires code changes throughout the app before upgrading.
   file_picker: ^10.3.2     # To pick company logo
-  image_picker: ^1.2.1
+  image_picker: ^1.2.2
   uuid: ^4.5.3            # For generating unique IDs
 
 
@@ -74,7 +74,7 @@ dev_dependencies:
   # Database code generation
   # Capped to match drift constraint — drift_dev must stay in sync with drift.
   drift_dev: ">=2.31.0 <2.32.0"
-  build_runner: ^2.13.1
+  build_runner: ^2.15.0
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
