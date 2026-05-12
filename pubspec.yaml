@@ -53,10 +53,7 @@ dependencies:
   # UI & Utilities
   fl_chart: ^1.2.0       # For reports
   intl: ^0.20.2           # For date and currency formatting
-  # NOTE: file_picker 11.x is a major version bump — the API changed from
-  # instance-based to static methods (FilePicker.pickFiles() etc.).
-  # Requires code changes throughout the app before upgrading.
-  file_picker: ^10.3.2     # To pick company logo
+  file_picker: ^11.0.2     # To pick company logo
   image_picker: ^1.2.2
   uuid: ^4.5.3            # For generating unique IDs
 
