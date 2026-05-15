@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Tracker</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --surface: #1e1e1e;
+      --text: #e0e0e0;
+      --muted: #9e9e9e;
+      --accent: #64ffda;
+      --accent-dark: #00bfa5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      padding: 4rem 1.5rem 3rem;
+      text-align: center;
+      background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    }
+    header h1 {
+      margin: 0 0 0.5rem;
+      font-size: 2.5rem;
+      letter-spacing: -0.5px;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+    section { margin-bottom: 3rem; }
+    section h2 {
+      font-size: 1.5rem;
+      border-bottom: 1px solid #2a2a2a;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .feature {
+      background: var(--surface);
+      padding: 1.25rem;
+      border-radius: 12px;
+      border: 1px solid #2a2a2a;
+    }
+    .feature h3 {
+      margin: 0 0 0.5rem;
+      color: var(--accent);
+      font-size: 1.05rem;
+    }
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .screenshot {
+      background: var(--surface);
+      border: 1px dashed #3a3a3a;
+      border-radius: 12px;
+      padding: 4rem 1rem;
+      text-align: center;
+      color: var(--muted);
+    }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      border-top: 1px solid #2a2a2a;
+    }
+    a { color: var(--accent); }
+    a:hover { color: var(--accent-dark); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Time Tracker</h1>
+    <p>A Flutter app for tracking tasks, time, and invoicing your work.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Features</h2>
+      <div class="features">
+        <div class="feature">
+          <h3>Tasks &amp; Todos</h3>
+          <p>Plan your work with prioritised tasks, deadlines, and project tagging. Search across title, description, category, and project.</p>
+        </div>
+        <div class="feature">
+          <h3>Time Tracking</h3>
+          <p>Start a timer from any task and stop it when you're done. Idle detection keeps your entries honest.</p>
+        </div>
+        <div class="feature">
+          <h3>Projects &amp; Clients</h3>
+          <p>Group work by project and tie projects to clients for accurate billing.</p>
+        </div>
+        <div class="feature">
+          <h3>Expenses</h3>
+          <p>Log billable and non-billable expenses alongside your tracked time.</p>
+        </div>
+        <div class="feature">
+          <h3>Invoices</h3>
+          <p>Generate PDF invoices from your time entries and expenses, in your preferred currency.</p>
+        </div>
+        <div class="feature">
+          <h3>Reports</h3>
+          <p>See where your hours go with breakdowns by project, client, and category.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Screenshot</h2>
+      <div class="screenshot">Screenshot placeholder &mdash; add an image at <code>assets/screenshot.png</code> and reference it here.</div>
+    </section>
+  </main>
+
+  <footer>
+    Built with Flutter &middot; <a href="README.md">Read the docs</a>
+  </footer>
+</body>
+</html>
