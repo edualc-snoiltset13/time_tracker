@@ -33,7 +33,7 @@ dependencies:
     
   # Database (Local Storage)
   drift: ^2.18.0
-  sqlite3_flutter_libs: ^0.5.21
+  sqlite3_flutter_libs: ^0.5.42
   path_provider: ^2.1.3
   path: ^1.9.0
 
@@ -41,29 +41,29 @@ dependencies:
   provider: ^6.1.2
 
   # PDF Generation & Handling
-  pdf: ^3.10.8
-  printing: ^5.12.0
-  open_file: ^3.3.2
+  pdf: ^3.12.0
+  printing: ^5.14.3
+  open_file: ^3.5.11
 
   # UI & Utilities
-  fl_chart: ^1.0.0       # For reports
+  fl_chart: ^1.2.0       # For reports
   intl: ^0.20.2           # For date and currency formatting
-  file_picker: ^10.3.2     # To pick company logo
+  file_picker: ^10.3.9    # To pick company logo; fixes CVE-2025-66516, CVE-2025-54988
   image_picker: ^1.1.2
-  uuid: ^4.4.0            # For generating unique IDs
+  uuid: ^4.5.3            # For generating unique IDs
 
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^1.0.9
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   # Database code generation
   drift_dev: ^2.18.0
-  build_runner: ^2.4.9
+  build_runner: ^2.15.0
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
