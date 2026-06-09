@@ -237,18 +237,18 @@ packages:
     dependency: "direct main"
     description:
       name: drift
-      sha256: "970cd188fddb111b26ea6a9b07a62bf5c2432d74147b8122c67044ae3b97e99e"
+      sha256: "055c249d1f91be5a47fe447f88afc24c4ca6f4cd6c5ed66767b4797d48acc2e5"
       url: "https://pub.dev"
     source: hosted
-    version: "2.31.0"
+    version: "2.32.1"
   drift_dev:
     dependency: "direct dev"
     description:
       name: drift_dev
-      sha256: "917184b2fb867b70a548a83bf0d36268423b38d39968c06cce4905683da49587"
+      sha256: "88a9de3af8571518148a6d8a513b57779fd1e60a026d3ab8a481a878fba01d91"
       url: "https://pub.dev"
     source: hosted
-    version: "2.31.0"
+    version: "2.32.1"
   equatable:
     dependency: transitive
     description:
@@ -878,21 +878,13 @@ packages:
     source: hosted
     version: "7.0.0"
   sqlite3:
-    dependency: transitive
-    description:
-      name: sqlite3
-      sha256: f393d92c71bdcc118d6203d07c991b9be0f84b1a6f89dd4f7eed348131329924
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.9.0"
-  sqlite3_flutter_libs:
     dependency: "direct main"
     description:
-      name: sqlite3_flutter_libs
-      sha256: "eeb9e3a45207649076b808f8a5a74d68770d0b7f26ccef6d5f43106eee5375ad"
+      name: sqlite3
+      sha256: "9488c7d2cdb1091c91cacf7e207cff81b28bff8e366f042bad3afe7d34afe189"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.42"
+    version: "3.3.2"
   sqlparser:
     dependency: transitive
     description:
