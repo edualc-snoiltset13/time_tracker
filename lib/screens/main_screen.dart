@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 // Import all of your screen files so this file knows what they are.
 import 'package:time_tracker/screens/clients/clients_screen.dart';
+import 'package:time_tracker/screens/dashboard_screen.dart';
 import 'package:time_tracker/screens/expenses/expenses_screen.dart';
 import 'package:time_tracker/screens/home_screen.dart';
 import 'package:time_tracker/screens/invoices/invoices_screen.dart';
@@ -23,6 +24,7 @@ class _MainScreenState extends State<MainScreen> {
 
   // This list now correctly references the imported screen classes.
   final List<Widget> _screens = <Widget>[
+    const DashboardScreen(),
     const HomeScreen(),
     const TimeTrackerScreen(),
     const ProjectsScreen(),
@@ -34,6 +36,7 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   final List<String> _titles = const <String>[
+    'Home',
     'Tasks To-Do',
     'Time Tracker',
     'Projects',
@@ -61,6 +64,10 @@ class _MainScreenState extends State<MainScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list_alt),
             label: 'Tasks',
