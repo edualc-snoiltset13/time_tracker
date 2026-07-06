@@ -70,7 +70,8 @@ dev_dependencies:
   # Database code generation
   # Capped at <2.32.0 to match drift constraint (see above).
   drift_dev: ">=2.18.0 <2.32.0"
-  build_runner: ^2.15.0
+  # Current lock: 2.7.0. Run `flutter pub upgrade build_runner` to get 2.15.0 (AOT builds, 4× faster).
+  build_runner: ^2.4.9
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
