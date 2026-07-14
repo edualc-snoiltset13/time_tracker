@@ -50,7 +50,7 @@ dependencies:
   # UI & Utilities
   fl_chart: ^1.2.0       # For reports
   intl: ^0.20.3           # For date and currency formatting
-  file_picker: ^10.3.2     # To pick company logo; 11.0.2 available but is a breaking major version bump
+  file_picker: ^11.0.2     # To pick company logo; v11 required for CVE-2025-66516 / CVE-2025-54988 security fixes
   image_picker: ^1.2.3
   uuid: ^4.5.3            # For generating unique IDs
 
