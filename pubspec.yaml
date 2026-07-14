@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.12.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -34,8 +34,8 @@ dependencies:
   # Database (Local Storage)
   # drift 2.32+ depends on sqlite3 3.x, which bundles its own native SQLite
   # binaries — sqlite3_flutter_libs is no longer needed and has been removed.
-  drift: ^2.32.0
-  sqlite3: ^3.3.2
+  drift: ^2.34.0
+  sqlite3: ^3.4.0
   path_provider: ^2.1.6
   path: ^1.9.0
 
@@ -43,14 +43,14 @@ dependencies:
   provider: ^6.1.2
 
   # PDF Generation & Handling
-  pdf: ^3.12.0
-  printing: ^5.14.3
-  open_file: ^3.5.11
+  pdf: ^3.13.0
+  printing: ^5.15.0
+  open_file: ^3.5.11       # 4.0.0 available but is a breaking major version bump
 
   # UI & Utilities
   fl_chart: ^1.2.0       # For reports
   intl: ^0.20.3           # For date and currency formatting
-  file_picker: ^11.0.2     # To pick company logo
+  file_picker: ^10.3.2     # To pick company logo; 11.0.2 available but is a breaking major version bump
   image_picker: ^1.2.3
   uuid: ^4.5.3            # For generating unique IDs
 
@@ -64,7 +64,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   # Database code generation
-  drift_dev: ^2.32.0
+  drift_dev: ^2.34.0
   build_runner: ^2.15.0
 
 
