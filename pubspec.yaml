@@ -32,8 +32,10 @@ dependencies:
     sdk: flutter
 
   # Database (Local Storage)
-  drift: ^2.18.0
-  sqlite3_flutter_libs: ^0.5.42  # NOTE: 0.6.0+eol marks this package deprecated; see PR for migration notes
+  # NOTE: drift 2.32.0+ drops sqlite3_flutter_libs in favour of sqlite3 ^3.x
+  # (Dart native build hooks). Pin below 2.32.0 until that migration is done.
+  drift: '>=2.18.0 <2.32.0'
+  sqlite3_flutter_libs: ^0.5.42  # 0.6.0+eol marks this package deprecated — migrate alongside drift
   path_provider: ^2.1.6
   path: ^1.9.0
 
@@ -47,7 +49,7 @@ dependencies:
   # UI & Utilities
   fl_chart: ^1.2.0       # For reports
   intl: ^0.20.3           # For date and currency formatting
-  image_picker: ^1.2.2
+  image_picker: ^1.2.3
 
 
 
@@ -58,9 +60,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  # Database code generation
-  drift_dev: ^2.18.0
-  build_runner: ^2.7.0
+  # Database code generation — keep version range in sync with drift runtime
+  drift_dev: '>=2.18.0 <2.32.0'
+  build_runner: ^2.15.0
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
