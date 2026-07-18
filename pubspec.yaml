@@ -34,7 +34,7 @@ dependencies:
   # Database (Local Storage)
   # NOTE: drift 2.32.0+ drops sqlite3_flutter_libs in favour of sqlite3 ^3.x
   # (Dart native build hooks). Pin below 2.32.0 until that migration is done.
-  drift: '>=2.18.0 <2.32.0'
+  drift: '>=2.31.0 <2.32.0'
   sqlite3_flutter_libs: ^0.5.42  # 0.6.0+eol marks this package deprecated — migrate alongside drift
   path_provider: ^2.1.6
   path: ^1.9.0
@@ -60,8 +60,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  # Database code generation — keep version range in sync with drift runtime
-  drift_dev: '>=2.18.0 <2.32.0'
+  # Database code generation — keep version range in sync with drift runtime.
+  # drift_dev 2.31.0 widens build dep to >=3.0.0 <5.0.0, enabling build_runner 2.15.x.
+  drift_dev: '>=2.31.0 <2.32.0'
   build_runner: ^2.15.0
 
 
