@@ -49,21 +49,21 @@ dependencies:
   fl_chart: ^1.2.0       # For reports
   intl: ^0.20.3           # For date and currency formatting
   file_picker: ^10.3.10    # To pick company logo; minimum enforces CVE-2025-66516 fix
-  image_picker: ^1.2.1
-  uuid: ^4.5.3            # For generating unique IDs
+  image_picker: ^1.2.3
+  uuid: ^4.6.0            # For generating unique IDs
 
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^1.0.9
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   # Database code generation
   drift_dev: ^2.31.0
-  build_runner: ^2.15.1
+  build_runner: ^2.15.2
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
