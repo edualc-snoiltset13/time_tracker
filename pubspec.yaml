@@ -30,10 +30,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-    
+
   # Database (Local Storage)
-  drift: ^2.34.3
-  sqlite3_flutter_libs: ^0.5.42
+  # NOTE: drift 2.32.0+ drops sqlite3_flutter_libs in favour of sqlite3 ^3.x
+  # (Dart native build hooks). Pin below 2.32.0 until that migration is done.
+  drift: '>=2.31.0 <2.32.0'
+  sqlite3_flutter_libs: ^0.5.42  # 0.6.0+eol marks this package deprecated — migrate alongside drift
   path_provider: ^2.1.6
   path: ^1.9.1
 
@@ -41,18 +43,13 @@ dependencies:
   provider: ^6.1.5
 
   # PDF Generation & Handling
-  pdf: ^3.12.0
-  printing: ^5.14.0
-  open_file: ^3.3.2
+  pdf: ^3.13.0
+  printing: ^5.15.0      # CVE-2024-4367 fixed in 5.15.0
 
   # UI & Utilities
   fl_chart: ^1.2.0       # For reports
   intl: ^0.20.3           # For date and currency formatting
-  file_picker: ^10.3.2     # To pick company logo
   image_picker: ^1.2.3
-  uuid: ^4.6.0            # For generating unique IDs
-
-
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -61,8 +58,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  # Database code generation
-  drift_dev: ^2.34.5
+  # Database code generation — keep version range in sync with drift runtime.
+  # drift_dev 2.31.0 widens build dep to >=3.0.0 <5.0.0, enabling build_runner 2.15.x+.
+  drift_dev: '>=2.31.0 <2.32.0'
   build_runner: ^2.16.0
 
 
@@ -97,7 +95,6 @@ flutter:
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
   # fonts:
