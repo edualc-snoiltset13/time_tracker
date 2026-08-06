@@ -1,206 +1,207 @@
-// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:time_tracker/database/database.dart';
-import 'package:drift/drift.dart' as drift;
-import 'package:time_tracker/screens/todos/todo_edit_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  // Method to start a timer from a task
-  void _startTimerFromTodo(BuildContext context, Todo todo) async {
-    final db = Provider.of<AppDatabase>(context, listen: false);
-
-    // Check if another timer is already running
-    final activeTimers = await (db.select(db.timeEntries)..where((t) => t.endTime.isNull())).get();
-
-    if (!context.mounted) return;
-
-    if (activeTimers.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Another timer is already running. Please stop it first.')),
-      );
-      return;
-    }
-
-    // Create a new time entry from the todo
-    final newEntry = TimeEntriesCompanion(
-      description: drift.Value(todo.title),
-      projectId: drift.Value(todo.projectId),
-      category: drift.Value(todo.category),
-      isBillable: const drift.Value(true), // Default to billable
-      startTime: drift.Value(DateTime.now()),
-    );
-
-    await db.into(db.timeEntries).insert(newEntry);
-
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Timer for "${todo.title}" has started!')),
-    );
-    
-    // TODO: Consider navigating to the Time Tracker tab
-    // This requires a more complex state management setup to control the BottomNavigationBar index from here.
-  }
-  
-  // Method to clear all completed tasks
-  void _clearCompletedTasks(BuildContext context) async {
-    final db = Provider.of<AppDatabase>(context, listen: false);
-    
-    final bool? shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Clear Completed Tasks'),
-          content: const Text('Are you sure you want to delete all completed tasks? This action cannot be undone.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-            ),
-            TextButton(
-              child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              onPressed: () {
-                (db.delete(db.todos)..where((t) => t.isCompleted.equals(true))).go();
-                Navigator.of(dialogContext).pop(true);
-              },
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldDelete == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Completed tasks have been cleared.')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final db = Provider.of<AppDatabase>(context);
-    final query = (db.select(db.todos)
-          ..orderBy([(t) => drift.OrderingTerm(expression: t.deadline)]))
-        .join([
-      drift.innerJoin(
-          db.projects, db.projects.id.equalsExp(db.todos.projectId))
-    ]);
+    final db = Provider.of<AppDatabase>(context, listen: false);
 
-    return Scaffold(
-      body: StreamBuilder(
-        stream: query.watch(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final todosWithProjects = snapshot.data ?? [];
-
-          if (todosWithProjects.isEmpty &&
-              snapshot.connectionState == ConnectionState.active) {
-            return const Center(
-              child: Text("No tasks found. Click '+' to plan your work!"),
-            );
-          }
-
-          return ListView.builder(
-            itemCount: todosWithProjects.length,
-            itemBuilder: (context, index) {
-              final result = todosWithProjects[index];
-              final todo = result.readTable(db.todos);
-              final project = result.readTable(db.projects);
-
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: ListTile(
-                  leading: Checkbox(
-                    value: todo.isCompleted,
-                    onChanged: (bool? value) {
-                      db.update(db.todos).replace(
-                            todo.copyWith(isCompleted: value ?? false),
-                          );
-                    },
-                  ),
-                  title: Text(
-                    todo.title,
-                    style: TextStyle(
-                      decoration: todo.isCompleted
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                  subtitle: Text(
-                    '${project.name} - Deadline: ${DateFormat.yMd().add_jm().format(todo.deadline)}',
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Chip(
-                        label: Text(
-                          todo.priority,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: _getPriorityColor(todo.priority),
-                      ),
-                      const SizedBox(width: 8),
-                      // The new Start Timer button
-                      IconButton(
-                        icon: const Icon(Icons.play_circle_outline),
-                        tooltip: 'Start Timer for this Task',
-                        onPressed: () => _startTimerFromTodo(context, todo),
-                      ),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => TodoEditScreen(todo: todo),
-                    ));
-                  },
-                ),
-              );
-            },
-          );
-        },
-      ),
-      // Use a Row for multiple FloatingActionButtons
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FloatingActionButton.extended(
-            onPressed: () => _clearCompletedTasks(context),
-            label: const Text('Clear Completed'),
-            icon: const Icon(Icons.delete_sweep),
-            heroTag: 'clear_tasks', // Hero tags must be unique
+          _buildWelcomeCard(),
+          const SizedBox(height: 24),
+          _buildStatisticsGrid(db),
+          const SizedBox(height: 24),
+          _buildTodayFocusCard(),
+          const SizedBox(height: 24),
+          _buildSpiritualQuoteCard(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6B4BA3), Color(0xFF9B7FBA)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Welcome to Divine Life',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 1.2,
+            ),
           ),
-          const SizedBox(width: 16),
-          FloatingActionButton(
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const TodoEditScreen(),
-              ));
-            },
-            heroTag: 'add_task',
-            child: const Icon(Icons.add),
+          const SizedBox(height: 8),
+          Text(
+            'Nurture your faith and spiritual growth',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.8),
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'P1':
-        return Colors.red.shade700;
-      case 'P2':
-        return Colors.orange.shade700;
-      case 'P3':
-        return Colors.blue.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+  Widget _buildStatisticsGrid(AppDatabase db) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      children: [
+        _buildStatCard('Prayers', '12', Icons.favorite, const Color(0xFFE94B3C)),
+        _buildStatCard('Verses Read', '8', Icons.menu_book, const Color(0xFF4B9BE0)),
+        _buildStatCard('Meditations', '5', Icons.spa, const Color(0xFF6BBE92)),
+        _buildStatCard('Streak Days', '21', Icons.whatshot, const Color(0xFFFFB84D)),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 32, color: color),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[400],
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTodayFocusCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF9B7FBA).withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.light_mode, color: Color(0xFF9B7FBA), size: 24),
+              const SizedBox(width: 8),
+              const Text(
+                'Today\'s Focus',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2A2A3E),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              '1. Morning Prayer - 10 minutes\n2. Read Daily Verse\n3. Meditation - 15 minutes\n4. Evening Reflection',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.white70,
+                height: 1.6,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpiritualQuoteCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF4B9BE0).withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.format_quote, color: Color(0xFF4B9BE0), size: 28),
+          const SizedBox(height: 12),
+          const Text(
+            '"For I know the plans I have for you, declares the Lord, plans for welfare and not for evil, to give you a future and a hope."',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white,
+              fontStyle: FontStyle.italic,
+              height: 1.6,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Jeremiah 29:11',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[400],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,15 +1,14 @@
-// lib/screens/main_screen.dart
 import 'package:flutter/material.dart';
-
-// Import all of your screen files so this file knows what they are.
-import 'package:time_tracker/screens/clients/clients_screen.dart';
-import 'package:time_tracker/screens/expenses/expenses_screen.dart';
 import 'package:time_tracker/screens/home_screen.dart';
-import 'package:time_tracker/screens/invoices/invoices_screen.dart';
-import 'package:time_tracker/screens/projects/projects_screen.dart';
-import 'package:time_tracker/screens/reports/reports_screen.dart';
-import 'package:time_tracker/screens/settings/settings_screen.dart';
-import 'package:time_tracker/screens/time_tracker/time_tracker_screen.dart';
+import 'package:time_tracker/screens/prayers/prayers_screen.dart';
+import 'package:time_tracker/screens/verses/daily_verse_screen.dart';
+import 'package:time_tracker/screens/meditations/meditations_screen.dart';
+import 'package:time_tracker/screens/devotionals/devotionals_screen.dart';
+import 'package:time_tracker/screens/bible_study/bible_study_screen.dart';
+import 'package:time_tracker/screens/habits/habits_screen.dart';
+import 'package:time_tracker/screens/reflections/reflections_screen.dart';
+import 'package:time_tracker/screens/testimonies/testimonies_screen.dart';
+import 'package:time_tracker/screens/community/community_prayers_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -21,27 +20,43 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  // This list now correctly references the imported screen classes.
-  final List<Widget> _screens = <Widget>[
-    const HomeScreen(),
-    const TimeTrackerScreen(),
-    const ProjectsScreen(),
-    const ClientsScreen(),
-    const ExpensesScreen(),
-    const InvoicesScreen(),
-    const ReportsScreen(),
-    const SettingsScreen(),
+  final List<Widget> _screens = const <Widget>[
+    HomeScreen(),
+    PrayersScreen(),
+    DailyVerseScreen(),
+    MeditationsScreen(),
+    DevotionalsScreen(),
+    BibleStudyScreen(),
+    HabitsScreen(),
+    ReflectionsScreen(),
+    TestimoniesScreen(),
+    CommunityPrayersScreen(),
   ];
 
   final List<String> _titles = const <String>[
-    'Tasks To-Do',
-    'Time Tracker',
-    'Projects',
-    'Clients',
-    'Expenses',
-    'Invoices',
-    'Reports',
-    'Settings',
+    'Divine Life',
+    'Prayers',
+    'Daily Verse',
+    'Meditations',
+    'Devotionals',
+    'Bible Study',
+    'Habits',
+    'Reflections',
+    'Testimonies',
+    'Community',
+  ];
+
+  final List<IconData> _icons = const <IconData>[
+    Icons.home,
+    Icons.favorite,
+    Icons.menu_book,
+    Icons.spa,
+    Icons.light_mode,
+    Icons.library_books,
+    Icons.check_circle,
+    Icons.edit_note,
+    Icons.person,
+    Icons.people,
   ];
 
   void _onItemTapped(int index) {
@@ -54,52 +69,34 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(_icons[_selectedIndex], color: const Color(0xFF9B7FBA)),
+            const SizedBox(width: 12),
+            Text(_titles[_selectedIndex]),
+          ],
+        ),
       ),
       body: Center(
         child: _screens.elementAt(_selectedIndex),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: 'Tasks',
+        items: List.generate(
+          _icons.length,
+          (index) => BottomNavigationBarItem(
+            icon: Icon(_icons[index]),
+            label: _titles[index].split(' ').first,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.timer),
-            label: 'Tracker',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.folder),
-            label: 'Projects',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Clients',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt),
-            label: 'Expenses',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.request_quote),
-            label: 'Invoices',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Reports',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
+        ),
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.tealAccent,
+        selectedItemColor: const Color(0xFF9B7FBA),
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: const Color(0xFF1A1A2E),
+        showSelectedLabels: true,
+        showUnselectedLabels: false,
       ),
     );
   }

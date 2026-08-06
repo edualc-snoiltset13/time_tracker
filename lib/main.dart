@@ -20,25 +20,31 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Time Tracker',
+      title: 'Divine Life',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        primaryColor: Colors.deepPurple,
-        scaffoldBackgroundColor: const Color.fromARGB(255, 28, 25, 38),
-        cardColor: const Color.fromARGB(255, 0, 0, 0),
+        primaryColor: const Color(0xFF6B4BA3), // Deep spiritual purple
+        scaffoldBackgroundColor: const Color(0xFF0F0F1E), // Deep dark background
+        cardColor: const Color(0xFF1A1A2E),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
+          seedColor: const Color(0xFF9B7FBA),
           brightness: Brightness.dark,
         ),
         appBarTheme: const AppBarTheme(
           elevation: 0,
-          backgroundColor: Color.fromARGB(255, 28, 25, 38)
+          backgroundColor: Color(0xFF0F0F1E),
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF9B7FBA),
+            letterSpacing: 1.2,
+          ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Colors.deepPurple,
+          backgroundColor: Color(0xFF9B7FBA),
         ),
       ),
-      // Use MainScreen as the home widget
       home: const MainScreen(),
     );
   }
