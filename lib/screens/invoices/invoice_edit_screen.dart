@@ -432,7 +432,7 @@ class _InvoiceEditScreenState extends State<InvoiceEditScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 return DropdownButtonFormField<Client>(
-                  initialValue: _selectedClient,
+                  value: _selectedClient,
                   decoration: const InputDecoration(labelText: 'Client'),
                   items: snapshot.data!
                       .map(
