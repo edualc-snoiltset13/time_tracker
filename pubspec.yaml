@@ -41,8 +41,8 @@ dependencies:
   provider: ^6.1.2
 
   # PDF Generation & Handling
-  pdf: ^3.10.8
-  printing: ^5.12.0
+  pdf: ^3.13.0
+  printing: ^5.15.0
   open_file: ^3.3.2
 
   # UI & Utilities
