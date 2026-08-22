@@ -30,10 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-    
+
   # Database (Local Storage)
   drift: ^2.34.3
-  sqlite3_flutter_libs: ^0.5.21  # EOL — migrate to sqlite3 ^3.x (see PR description)
+  sqlite3_flutter_libs: ^0.5.42  # EOL — migrate to sqlite3 ^3.x (see PR description)
   path_provider: ^2.1.6
   path: ^1.9.0
 
@@ -41,16 +41,16 @@ dependencies:
   provider: ^6.1.2
 
   # PDF Generation & Handling
-  pdf: ^3.10.8              # 3.13.0 available but may require Dart >=3.12 — flagged in PR
+  pdf: ^3.12.0
   printing: ^5.15.0
-  open_file: ^3.3.2         # 4.0.0 available (breaking) — flagged in PR
+  open_file: ^3.5.11              # 4.0.0 available (breaking) — flagged in PR
 
   # UI & Utilities
-  fl_chart: ^1.2.0           # For reports
-  intl: ^0.20.3              # For date and currency formatting
-  file_picker: ^10.3.2       # To pick company logo; 12.0.0 available (breaking) — flagged in PR
+  fl_chart: ^1.2.0               # For reports
+  intl: ^0.20.3                  # For date and currency formatting
+  file_picker: ^10.3.2           # To pick company logo; 12.0.0 available (breaking) — flagged in PR
   image_picker: ^1.2.3
-  uuid: ^4.6.0               # For generating unique IDs
+  uuid: ^4.6.0                   # For generating unique IDs
 
 
 
@@ -63,7 +63,7 @@ dev_dependencies:
     sdk: flutter
   # Database code generation
   drift_dev: ^2.34.3
-  build_runner: ^2.16.0
+  build_runner: ^2.7.1
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
