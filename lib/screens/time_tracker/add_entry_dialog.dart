@@ -129,7 +129,7 @@ class _AddEntryDialogState extends State<AddEntryDialog> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<int>(
-                        initialValue: _selectedProjectId,
+                        value: _selectedProjectId,
                         decoration: const InputDecoration(labelText: 'Project'),
                         hint: const Text('Select a project'),
                         items: _projectsWithClients.map((result) {
@@ -145,7 +145,7 @@ class _AddEntryDialogState extends State<AddEntryDialog> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedCategory,
+                        value: _selectedCategory,
                         decoration: const InputDecoration(labelText: 'Category'),
                         hint: const Text('Select a category'),
                         items: _categories.map((category) {
